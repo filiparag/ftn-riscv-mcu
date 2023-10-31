@@ -5,24 +5,17 @@ use ieee.numeric_std.all;
 
 entity wb_slave_arbiter is
   generic (
-		RST_VECTOR_START: integer := 16#00#;
-		RST_VECTOR_STOP: integer := 16#0F#;
-		IRQ_TABKE_START: integer := 16#10#;
-		IRQ_TABKE_STOP: integer := 16#19#;
-		PERIPHERAL_START: integer := 16#0#;
-		PERIPHERAL_DELIMETER: integer := 16#20#;
-		PERIPHERAL_STOP: integer := 16#7FF#;
-		BOOTLOADER_START: integer := 16#800#;
-		BOOTLOADER_STOP: integer := 16#87FF#;
-		FAST_RAM_START: integer := 16#8800#;
-		FAST_RAM_STOP: integer := 16#11A7F#;
-		SLOW_RAM_START: integer := 16#11A80#;
-		SLOW_RAM_STOP: integer := 16#FFFFFFFF#;
 		
-		RSTV  : integer := 16#800#;
-		IRQ0V : integer := 16#8400#; 
-		IRQ1V : integer := 16#8500#;
-		IRQ2V : integer := 16#8600#
+		INIT_SIZE:		positive := 16#20#; 		-- Reset and IRQ vectors
+		PERIPH_SIZE:	positive := 16#800#; 	-- Memory-mapped peripherals (including init size)
+		BOOT_SIZE:		positive := 16#4000#; 	-- Bootloader
+		FW_SIZE:			positive := 16#D280#; 	-- Firmware
+		SDRAM_SIZE:		positive := 16#100000#; -- SD RAM (including previous)
+		
+		RST_VEC  : integer := 16#0800#; -- Jump to bootloader start
+		IRQ0_VEC : integer := 16#0C00#;
+		IRQ1_VEC : integer := 16#0D00#;
+		IRQ2_VEC : integer := 16#0E00#
 	
   );
   port (
@@ -38,127 +31,138 @@ entity wb_slave_arbiter is
 		 o_wb_data			: out std_logic_vector(31 downto 0);
 		 
 		-- Peripherals (mask with RST & IRQ)
-		o_wb_peripheral_cyc		: out std_logic;
-		o_wb_peripheral_stb		: out std_logic;
-		o_wb_peripheral_we		: out std_logic;
-		o_wb_peripheral_addr		: out std_logic_vector(31 downto 0);
-		o_wb_peripheral_data		: out std_logic_vector(31 downto 0);
-		o_wb_peripheral_sel		: out std_logic_vector(3 downto 0);
-		i_wb_peripheral_stall	: in  std_logic;
-		i_wb_peripheral_ack		: in  std_logic;
-		i_wb_peripheral_data		: in  std_logic_vector(31 downto 0);
+		o_wb_periph_cyc		: out std_logic;
+		o_wb_periph_stb		: out std_logic;
+		o_wb_periph_we			: out std_logic;
+		o_wb_periph_addr		: out std_logic_vector(31 downto 0);
+		o_wb_periph_data		: out std_logic_vector(31 downto 0);
+		o_wb_periph_sel		: out std_logic_vector(3 downto 0);
+		i_wb_periph_stall		: in  std_logic;
+		i_wb_periph_ack		: in  std_logic;
+		i_wb_periph_data		: in  std_logic_vector(31 downto 0);
 		
-		-- BRAM Bootloader ROM
-		o_wb_rom_cyc		: out std_logic;
-		o_wb_rom_stb		: out std_logic;
-		o_wb_rom_we			: out std_logic; -- ignore because read-only
-		o_wb_rom_addr		: out std_logic_vector(31 downto 0);
-		o_wb_rom_data		: out std_logic_vector(31 downto 0); -- ignore because read-only
-		o_wb_rom_sel		: out std_logic_vector(3 downto 0);
-		i_wb_rom_stall		: in  std_logic;
-		i_wb_rom_ack		: in  std_logic;
-		i_wb_rom_data		: in  std_logic_vector(31 downto 0);
+		-- BRAM Bootloader
+		o_wb_boot_cyc		: out std_logic;
+		o_wb_boot_stb		: out std_logic;
+		o_wb_boot_we		: out std_logic; -- ignore because read-only
+		o_wb_boot_addr		: out std_logic_vector(31 downto 0);
+		o_wb_boot_data		: out std_logic_vector(31 downto 0); -- ignore because read-only
+		o_wb_boot_sel		: out std_logic_vector(3 downto 0);
+		i_wb_boot_stall	: in  std_logic;
+		i_wb_boot_ack		: in  std_logic;
+		i_wb_boot_data		: in  std_logic_vector(31 downto 0);
 		
-		-- BRAM Fast RAM
-		o_wb_fast_ram_cyc		: out std_logic;
-		o_wb_fast_ram_stb		: out std_logic;
-		o_wb_fast_ram_we		: out std_logic;
-		o_wb_fast_ram_addr	: out std_logic_vector(31 downto 0);
-		o_wb_fast_ram_data	: out std_logic_vector(31 downto 0);
-		o_wb_fast_ram_sel		: out std_logic_vector(3 downto 0);
-		i_wb_fast_ram_stall	: in  std_logic;
-		i_wb_fast_ram_ack		: in  std_logic;
-		i_wb_fast_ram_data	: in  std_logic_vector(31 downto 0);
+		-- BRAM Firmware
+		o_wb_fw_cyc		: out std_logic;
+		o_wb_fw_stb		: out std_logic;
+		o_wb_fw_we		: out std_logic;
+		o_wb_fw_addr	: out std_logic_vector(31 downto 0);
+		o_wb_fw_data	: out std_logic_vector(31 downto 0);
+		o_wb_fw_sel		: out std_logic_vector(3 downto 0);
+		i_wb_fw_stall	: in  std_logic;
+		i_wb_fw_ack		: in  std_logic;
+		i_wb_fw_data	: in  std_logic_vector(31 downto 0);
 		
-		-- SDRAM Slow RAM
-		o_wb_slow_ram_cyc		: out std_logic;
-		o_wb_slow_ram_stb		: out std_logic;
-		o_wb_slow_ram_we		: out std_logic;
-		o_wb_slow_ram_addr	: out std_logic_vector(31 downto 0);
-		o_wb_slow_ram_data	: out std_logic_vector(31 downto 0);
-		o_wb_slow_ram_sel		: out std_logic_vector(3 downto 0);
-		i_wb_slow_ram_stall	: in  std_logic;
-		i_wb_slow_ram_ack		: in  std_logic;
-		i_wb_slow_ram_data	: in  std_logic_vector(31 downto 0)
+		-- SDRAM Memory
+		o_wb_sdram_cyc		: out std_logic;
+		o_wb_sdram_stb		: out std_logic;
+		o_wb_sdram_we		: out std_logic;
+		o_wb_sdram_addr	: out std_logic_vector(31 downto 0);
+		o_wb_sdram_data	: out std_logic_vector(31 downto 0);
+		o_wb_sdram_sel		: out std_logic_vector(3 downto 0);
+		i_wb_sdram_stall	: in  std_logic;
+		i_wb_sdram_ack		: in  std_logic;
+		i_wb_sdram_data	: in  std_logic_vector(31 downto 0)
 
     );
 end entity;
 
+--- NAME					START		END			SELECTOR
+--- RST vector			0x00		0x0F			00
+--- IRQ table 			0x10		0x19			00
+--- Peripherals		0x20 		0x7FF			00
+--- BRAM Bootloader 	0x800 	0x47FF		01
+--- BRAM Firmware		0x4800 	0x11A7F		10
+--- SDRAM Memory		0x11A80 	0xFFFFFFFF	11
+
 architecture rtl of wb_slave_arbiter is
 	
-	signal s_select_output : std_logic_vector(1 downto 0);
-	signal s_peripheral_select : boolean;
-	signal s_peripheral_out : std_logic_vector(31 downto 0);
+	signal s_select_output : 		std_logic_vector(1 downto 0);
+	signal s_peripheral_select : 	boolean;
+	signal s_peripheral_out : 		std_logic_vector(31 downto 0);
 	type t_a_addresses is array (0 to 31) of integer;
-	constant a_addresses : t_a_addresses := (
-	  0 => RSTV,
+	constant a_addresses : t_a_addresses := ( -- Init region virtual memory data
+	  0 => RST_VEC,
 	  1 to 15 => 0,
-	  16 =>  IRQ0V,
-	  17 =>  IRQ1V,
-	  18 =>  IRQ2V,
+	  16 =>  IRQ0_VEC,
+	  17 =>  IRQ1_VEC,
+	  18 =>  IRQ2_VEC,
 	  19 to 31 => 0
 	);
 	
-begin
-
-	--- Name					Start		End			Select bits	
-	--- RST vector			0x00		0x0F			00
-	--- IRQ table 			0x10		0x19			00
-	--- Peripherals		0x20 		0x7FF			00
-   --- BRAM Bootloader 	0x800 	0x87FF		01
-	--- BRAM Fast RAM		0x8800 	0x11A7F		10
-	--- SDRAM Slow RAM	0x11A80 	0xFFFFFFFF	11
+	constant PERIPH_START:	positive := INIT_SIZE; 							-- 0x20
+	constant PERIPH_END: 	positive := PERIPH_SIZE - 1; 					-- 0x7FF
+	constant BOOT_START: 	positive := PERIPH_SIZE; 						-- 0x800
+	constant BOOT_END: 		positive := BOOT_START + BOOT_SIZE - 1; 	-- 0x47FF
+	constant FW_START:		positive := BOOT_END + 1; 						-- 0x4800
+	constant FW_END: 			positive := FW_START + FW_SIZE - 1; 		-- 0x11A7F
+	constant SDRAM_START:	positive := FW_END + 1; 						-- 0x11A80
+	constant SDRAM_END: 		positive := SDRAM_SIZE; 						-- 0x100000
 	
-	s_peripheral_select <= i_wb_addr >= PERIPHERAL_DELIMETER;
+begin
+	
+	-- Virtual init region and memory-mapped peripherals share address space
+	s_peripheral_select <= i_wb_addr >= PERIPH_START;
 	s_peripheral_out <= std_logic_vector(to_unsigned(a_addresses(to_integer(unsigned(i_wb_addr))), 32)) when not s_peripheral_select else
-							  i_wb_peripheral_data;
-	s_select_output <= "00" when i_wb_addr <= PERIPHERAL_STOP else
-							 "01" when i_wb_addr <= BOOTLOADER_STOP else
-							 "10" when i_wb_addr <= FAST_RAM_STOP else
+							  i_wb_periph_data;
+							  
+	-- Select correct data based on address	  
+	s_select_output <= "00" when i_wb_addr <= PERIPH_END else
+							 "01" when i_wb_addr <= BOOT_END else
+							 "10" when i_wb_addr <= FW_END else
 							 "11";
 				
    -- Pass requested address with offset 
-	o_wb_peripheral_addr <= i_wb_addr - PERIPHERAL_START;
-	o_wb_rom_addr <= i_wb_addr - BOOTLOADER_START;
-	o_wb_slow_ram_addr <= i_wb_addr - SLOW_RAM_START;
-	o_wb_fast_ram_addr <= i_wb_addr - FAST_RAM_START;
-	
+	o_wb_periph_addr <= i_wb_addr - PERIPH_START;
+	o_wb_boot_addr <= i_wb_addr - BOOT_START;
+	o_wb_fw_addr <= i_wb_addr - FW_START;
+	o_wb_sdram_addr <= i_wb_addr - SDRAM_START;
 	
 	-- Pass write enable flag
-	o_wb_peripheral_we <= i_wb_we when s_select_output = "00" else '0';
-	o_wb_rom_we <= '0';
-	o_wb_slow_ram_we <= i_wb_we when s_select_output = "10" else '0';
-	o_wb_fast_ram_we <= i_wb_we when s_select_output = "11" else '0';
+	o_wb_periph_we <= i_wb_we when s_select_output = "00" else '0';
+	o_wb_boot_we <= '0'; -- read only
+	o_wb_fw_we <= i_wb_we when s_select_output = "10" else '0';
+	o_wb_sdram_we <= i_wb_we when s_select_output = "11" else '0';
 	
 	-- Pass strobe
-	o_wb_peripheral_stb <= i_wb_stb when s_select_output = "00" and s_peripheral_select else '0';
-	o_wb_rom_stb <= i_wb_stb when s_select_output = "01" else '0';
-	o_wb_fast_ram_stb <= i_wb_stb when s_select_output = "10" else '0';
-	o_wb_slow_ram_stb <= i_wb_stb when s_select_output = "11" else '0';
+	o_wb_periph_stb <= i_wb_stb when s_select_output = "00" and s_peripheral_select else '0';
+	o_wb_boot_stb <= i_wb_stb when s_select_output = "01" else '0';
+	o_wb_fw_stb <= i_wb_stb when s_select_output = "10" else '0';
+	o_wb_sdram_stb <= i_wb_stb when s_select_output = "11" else '0';
 	
 	-- Pass bus cycle
-	o_wb_peripheral_cyc <= i_wb_cyc when s_select_output = "00" and s_peripheral_select else '0';
-	o_wb_rom_cyc <= i_wb_cyc when s_select_output = "01" else '0';
-	o_wb_fast_ram_cyc <= i_wb_cyc when s_select_output = "10" else '0';
-	o_wb_slow_ram_cyc <= i_wb_cyc when s_select_output = "11" else '0';
+	o_wb_periph_cyc <= i_wb_cyc when s_select_output = "00" and s_peripheral_select else '0';
+	o_wb_boot_cyc <= i_wb_cyc when s_select_output = "01" else '0';
+	o_wb_fw_cyc <= i_wb_cyc when s_select_output = "10" else '0';
+	o_wb_sdram_cyc <= i_wb_cyc when s_select_output = "11" else '0';
 	
 	-- Pass select mask
-	o_wb_peripheral_sel <= i_wb_sel;
-	o_wb_rom_sel <= i_wb_sel;
-	o_wb_fast_ram_sel <= i_wb_sel;
-	o_wb_slow_ram_sel <= i_wb_sel;
+	o_wb_periph_sel <= i_wb_sel;
+	o_wb_boot_sel <= i_wb_sel;
+	o_wb_fw_sel <= i_wb_sel;
+	o_wb_sdram_sel <= i_wb_sel;
 	
 	-- Pass data to slave
-	o_wb_peripheral_data <= i_wb_data;
-	o_wb_rom_data <= (others => '0');
-	o_wb_fast_ram_data <= i_wb_data;
-	o_wb_slow_ram_data <= i_wb_data;
+	o_wb_periph_data <= i_wb_data;
+	o_wb_boot_data <= (others => '0'); -- read only
+	o_wb_fw_data <= i_wb_data;
+	o_wb_sdram_data <= i_wb_data;
 	
 	-- Pass data to master
 	o_wb_data <= s_peripheral_out when s_select_output = "00" else
-					 i_wb_rom_data when s_select_output = "01" else
-					 i_wb_fast_ram_data when s_select_output = "10" else
-					 i_wb_slow_ram_data when s_select_output = "11" else
+					 i_wb_boot_data when s_select_output = "01" else
+					 i_wb_fw_data when s_select_output = "10" else
+					 i_wb_sdram_data when s_select_output = "11" else
 					 (others => '0');
 
 end architecture;
