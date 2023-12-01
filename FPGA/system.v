@@ -4,18 +4,22 @@
 //`define SYM 
 
 module system (
-	input           	i_clk,
-	input            	i_rst,
-	input      [7:0] 	i_switch,
-	input      [4:0] 	i_button, // 0bcenter_right_left_down_up
-	output reg [7:0] 	o_led,
-	output reg [7:0] 	o_7segm,
-	output reg [2:0] 	o_digit,
+	input   	i_clk,
+	input		i_rst,
+	
+	input   [7:0] 	i_switch,
+	input   [4:0] 	i_button, // 0bcenter_right_left_down_up
+	output  [7:0] 	o_led,
+	output  [7:0] 	o_7segm,
+	output  [2:0] 	o_digit,
 	
 	input  i_serial_rx,
 	output o_serial_tx,
 	output on_serial_cts,
 	output on_serial_dsr,
+	
+	input i_uart_rx,
+	output o_uart_tx,
 	
 	// SDRAM
 	output				o_ram_clk,	
@@ -392,8 +396,8 @@ module system (
 		.o_periph_digit (o_digit),
 		.i_periph_btn (i_button),
 		.i_periph_sw (i_switch),
-		.o_uart_rx (i_uart_rx),
-		.i_uart_tx (o_uart_tx)
+		.i_uart_rx (i_uart_rx),
+		.o_uart_tx (o_uart_tx)
 	);
 	
 	RST_Reg rstreg (

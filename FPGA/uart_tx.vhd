@@ -43,7 +43,6 @@ architecture RTL of UART_TX is
    
 begin
  
-   
   p_UART_TX : process (i_Clk)
   begin
     if rising_edge(i_Clk) then
