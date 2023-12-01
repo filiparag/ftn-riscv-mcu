@@ -1,0 +1,62 @@
+# Quartus
+
+# Need to keep all HDL files and timing constraint files
+# *.vhd
+# *.v
+# *.sdc
+
+# Ignore Quartus II generated folders
+*_sim/
+db/
+greybox_tmp/
+incremental_db/
+simulation/
+testbench/
+timing/
+output_files/
+
+*_generation_script*
+*_inst.vhd
+*.cmp
+*.done
+*.eqn
+*.hex
+*.html
+*.jdi
+*.jpg
+*.mif
+*.pin
+*.pof
+*.ptf.*
+*.qar
+*.qarlog
+*.qws
+*_assignment_defaults.qdf
+*.rpt
+*.smsg
+*.sof
+*.sopc_builder
+*.summary
+*example*
+*sopc_*
+# The generated PLL specification file
+PLLJ_PLLSPE_INFO.txt
+
+# Generic generated files
+*~
+*.bak
+
+# Qsys generated files.
+*_qsys.sopcinfo
+*_qsys/
+.qsys_edit/
+
+# Modelsim stuff
+work/
+vsim.wlf
+transcript
+wave.do
+
+# waf stuff
+build/
+

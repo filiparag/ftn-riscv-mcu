@@ -1,0 +1,8 @@
+build/
+.lock-waf*
+
+*.disasm
+*.o
+*.elf
+*.hex
+*.map

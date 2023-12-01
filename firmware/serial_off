@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "MAX1000: Turning off serial, turning on programmer..."
+sudo rmmod ftdi_sio
+sudo rmmod usbserial
+# Check if board is seen by programmer.
+jtagconfig

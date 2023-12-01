@@ -1,0 +1,26 @@
+
+max1000_riscv.name=MAX1000
+max1000_riscv.vid.0=0x2341
+max1000_riscv.pid.0=0x003d
+max1000_riscv.vid.1=0x2A03
+max1000_riscv.pid.1=0x003d
+max1000_riscv.upload.tool=bossac
+max1000_riscv.upload.protocol=sam-ba
+max1000_riscv.upload.maximum_size=32768
+max1000_riscv.upload.use_1200bps_touch=true
+max1000_riscv.upload.wait_for_upload_port=false
+max1000_riscv.upload.native_usb=false
+max1000_riscv.build.mcu=riscv32im
+max1000_riscv.build.f_cpu=100000000L
+max1000_riscv.build.usb_manufacturer="FTDI"
+max1000_riscv.build.usb_product="MAX1000 RISCV"
+max1000_riscv.build.board=MAX1000_RISCV
+max1000_riscv.build.core=arduino
+max1000_riscv.build.extra_flags={build.usb_flags}
+max1000_riscv.build.ldscript=linker_scripts/gcc/bram_sdram.lds
+max1000_riscv.build.variant=max1000_riscv
+max1000_riscv.build.vid=0x2341
+max1000_riscv.build.pid=0x003e
+
+
+
