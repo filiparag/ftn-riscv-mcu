@@ -27,4 +27,4 @@ DATE = "10:46:34  February 07, 2019"
 
 # Revisions
 
-PROJECT_REVISION = "picorv32_rtrk"
+PROJECT_REVISION = "lprs_cpu"
