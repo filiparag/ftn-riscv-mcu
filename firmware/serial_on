@@ -1,4 +1,0 @@
-#!/bin/bash
-
-echo "MAX1000: Turning on serial, turning off programmer..."
-sudo modprobe ftdi_sio

@@ -20,3 +20,11 @@ enum BUTTON {
   RIGHT = 0b01000,
   CENTER = 0b10000,
 };
+
+void set_led(const usize index, const enum DIGITAL_STATE state);
+
+void set_hex(const u16 value);
+void set_7segm(const u32 value);
+
+enum DIGITAL_STATE get_btn(const enum BUTTON button);
+enum DIGITAL_STATE get_sw(const usize index);

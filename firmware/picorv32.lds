@@ -1,10 +1,5 @@
-/* https://users.informatik.haw-hamburg.de/~krabat/FH-Labor/gnupro/5_GNUPro_Utilities/c_Using_LD/ldLinker_scripts.html */
-
-/* Constants */
 BRAM_SIZE = 0xC000;
 SDRAM_SIZE = 0x100000;
-
-/* Memory layout - name (attributes) : ORIGIN = start address, LENGTH = size */
 
 ENTRY(__reset)
 
