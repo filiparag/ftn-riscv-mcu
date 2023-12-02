@@ -54,12 +54,12 @@ architecture rtl of wb_slave_arbiter is
 	
 begin
 
-	-- Firmware		0x000000 - 0x001FFF (8KiB)   \
-	-- Stack			0x002000 - 0x00AFFF (36KiB)   | BRAM
-	-- Peripherals	0x00B000 - 0x00BFFF (4KiB)   /
-	-- Data 		   0x00C000 - 0x10BFFF (1MiB)   >  SDRAM fix***
+	-- Firmware		0x000000 - 0x000FFF (4KiB)   \
+	-- Stack			0x001000 - 0x007FFF (28KiB)   | BRAM
+	-- Peripherals	0x008000 - 0x00BFFF (16KiB)  /
+	-- Data 		   0x00C000 - 0x10BFFF (1MiB)   >  SDRAM
 
-	s_select_output <= "00" when i_wb_addr <= 16#AFFF# else		-- BRAM
+	s_select_output <= "00" when i_wb_addr <= 16#7FFF# else		-- BRAM
 					   "10" when i_wb_addr <= 16#BFFF# else		-- periph
 					   "01" when i_wb_addr <= 16#10BFFF# else -- sdram
 					   "11";											-- seg fault
@@ -144,7 +144,7 @@ begin
 			o_wb_periph_cyc	<= i_wb_cyc;				
 			o_wb_periph_stb	<= i_wb_stb;
 			o_wb_periph_we	<= i_wb_we;
-			o_wb_periph_addr <= i_wb_addr - 16#B000#;
+			o_wb_periph_addr <= i_wb_addr - 16#8000#;
 			o_wb_periph_data <= i_wb_data;
 			o_wb_periph_sel  <= i_wb_sel;		
 		else

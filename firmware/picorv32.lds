@@ -38,18 +38,19 @@ SECTIONS {
 		*(.sbss)
 		__sbss_end = . ;
 	} > bram
-	.stack 0x2000 : {
+	.stack 0x1000 : {
 		__stack_end = . ;
-		. = . + 0x8FFC;
+		. = . + 0x6FFC;
 		__stack_start = . ;
 	} > bram
-	.lprs1 0xb000 : {
+	.lprs1 0x8000 : {
 		. = ALIGN(4);
 		__lprs1_start = . ;
 		__gpio_led = . ;
 		__gpio_7segm_hex = . + 0x004;
 		__gpio_7segm = . + 0x008;
 		__gpio_btn_sw = . + 0x00C;
+		__uart_rx_ready = . + 0xFF4;
 		__uart_rx = . + 0xFF8;
 		__uart_tx = . + 0xFFC;
 		. = . + 0xFFC;

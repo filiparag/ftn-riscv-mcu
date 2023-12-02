@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
-entity Peripherals is port ( 
+entity Peripherals is port (
 		clk : in std_logic;
 		rst_n : in std_logic;
 		i_wb_cyc : in std_logic;
@@ -33,15 +33,15 @@ end entity;
 architecture Behavioral of Peripherals is
 
 	signal s_led : std_logic_vector(7 downto 0);
-	
+
 	signal s_digit : std_logic_vector(1 downto 0);
 	signal s_digit_hex : std_logic_vector(3 downto 0);
 	signal s_7segm : std_logic_vector(32 downto 0);
 	signal s_7segm_timer : std_logic_vector(15 downto 0);
-	
+
 	signal s_btn : std_logic_vector(4 downto 0);
 	signal s_sw : std_logic_vector(7 downto 0);
-	
+
 	signal s_uart_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_tx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_rx_dv : std_logic;
@@ -51,10 +51,10 @@ architecture Behavioral of Peripherals is
 	signal s_uart_tx_busy : std_logic;
 	signal s_uart_rx_waiting : std_logic;
 	signal s_uart_rx_ready : std_logic;
-	
+
 	signal s_wb_ack : std_logic;
 	signal s_wb_stall : std_logic;
-	
+
 begin
 
 	uart_rx : entity work.UART_RX(RTL)
@@ -67,7 +67,7 @@ begin
 			o_RX_DV     => s_uart_rx_dv,
 			o_RX_Byte   => s_uart_rx_byte
 		);
-		
+
 	uart_tx : entity work.UART_TX(RTL)
 		generic map (
 			g_CLKS_PER_BIT => 25
@@ -80,7 +80,7 @@ begin
 			o_TX_Serial => o_uart_tx,
 			o_TX_Done   => s_uart_tx_done
 		);
-	
+
 	display_heartbeat : process(clk, rst_n)
 	begin
 		if rst_n = '0' then
@@ -98,9 +98,9 @@ begin
 			end if;
 		end if;
 	end process;
-	
+
 	o_periph_digit <= "0" & s_digit;
-	select_digit : process(s_digit)
+	select_digit : process(s_digit, s_7segm)
 	begin
 		case s_digit is
 			when "11" => s_digit_hex <= s_7segm(15 downto 12);
@@ -109,7 +109,7 @@ begin
 			when others => s_digit_hex <= s_7segm(3 downto 0);
 		end case;
 	end process;
-					
+
 	display_digit : process(s_digit_hex, s_7segm)
 	begin
 		if s_7segm(32) = '1' then
@@ -136,24 +136,24 @@ begin
 				when "1101" => o_periph_7segm <= "11000010";
 				when "1110" => o_periph_7segm <= "10110000";
 				when "1111" => o_periph_7segm <= "10111000";
-				when others => o_periph_7segm <= "11111111";
+				when others => o_periph_7segm <= "10000001";
 			end case;
 		end if;
 	end process;
-	
+
 	o_periph_led <= s_led;
-	
+
 	wb_write : process(clk, rst_n)
 	begin
 		if(rst_n = '0') then
-			--s_led <= (others => '0');
+			s_led <= (others => '0');
 			s_7segm <= "100001110011001110000010101011011";
 			s_uart_tx_byte <= (others => '0');
 			s_uart_tx_dv <= '0';
 		elsif rising_edge(clk) then
 			if i_wb_stb = '1' and i_wb_we = '1' then
 				if i_wb_addr = x"000" then -- LED
-					--s_led <= i_wb_data(7 downto 0);
+					s_led <= i_wb_data(7 downto 0);
 				elsif i_wb_addr = x"004" then -- 7segm hex
 					s_7segm <= '0' & i_wb_data;
 				elsif i_wb_addr = x"0008" then -- 7segm custom
@@ -170,11 +170,9 @@ begin
 			end if;
 		end if;
 	end process;
-	
-	s_led <= s_uart_tx_active & s_uart_tx_done & s_uart_rx_dv & s_uart_rx_ready & s_uart_rx_waiting & s_uart_tx_busy & "0" & i_uart_rx; --dbg
-	--s_led <= s_uart_rx_byte;
-	
+
 	wb_read : process(clk, rst_n)
+		variable v_uart_rx_buffer_addr : integer;
 	begin
 		if(rst_n = '0') then
 			s_uart_rx_ready <= '0';
@@ -184,6 +182,9 @@ begin
 				if i_wb_addr = x"00c" then -- Buttons and switches
 					o_wb_data(12 downto 0) <=  i_periph_btn & i_periph_sw;
 					o_wb_data(31 downto 13) <= (others => '0');
+				elsif i_wb_addr = x"ff4" then -- UART RX ready
+					o_wb_data(0) <= s_uart_rx_ready;
+					o_wb_data(31 downto 1) <= (others => '0');
 				elsif i_wb_addr = x"ff8" then -- UART RX
 					if s_uart_rx_ready = '1' then
 						o_wb_data(7 downto 0) <=  s_uart_rx_byte;
@@ -197,12 +198,12 @@ begin
 					o_wb_data <= (others => '1');
 				end if;
 			end if;
-			if s_uart_rx_dv = '1' then
-				s_uart_rx_ready <= '1';
-			end if;
+		end if;
+		if s_uart_rx_dv = '1' then
+			s_uart_rx_ready <= '1';
 		end if;
 	end process;
-	
+
 	wb_ack: process(clk, rst_n)
    begin
       if rising_edge(clk) then
@@ -217,9 +218,9 @@ begin
          end if;
       end if;
    end process;
-	
-	s_wb_stall <= s_uart_tx_busy or s_uart_rx_waiting;
-	
+
+	s_wb_stall <= s_uart_tx_busy;
+
 	wb_stall : process(s_uart_tx_active, s_uart_tx_done)
 	begin
 		if(rst_n = '0') then
@@ -237,5 +238,5 @@ begin
 
 	o_wb_ack <= s_wb_ack and i_wb_stb and not s_wb_stall;
 	o_wb_stall <= s_wb_stall;
-	
+
 end Behavioral;
