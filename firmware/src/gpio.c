@@ -8,10 +8,11 @@ void set_hex(const u16 value) { __gpio_7segm_hex = value; }
 
 void set_7segm(const u32 value) { __gpio_7segm = value; }
 
-enum DIGITAL_STATE get_btn(const enum BUTTON button) {
+enum __attribute__((always_inline)) DIGITAL_STATE
+get_btn(const enum BUTTON button) {
   return (__gpio_btn_sw & 1 << (button + 8)) ? HIGH : LOW;
 }
 
-enum DIGITAL_STATE get_sw(const usize index) {
+enum __attribute__((always_inline)) DIGITAL_STATE get_sw(const usize index) {
   return (__gpio_btn_sw & 1 << index) ? HIGH : LOW;
 }

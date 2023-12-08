@@ -184,15 +184,22 @@ module system (
 	assign  	o_ram_dqm	= s_ram_dqm;
 	
 	picorv32_wb #(
-		.ENABLE_PCPI(1),
+		.COMPRESSED_ISA(0),
+		.ENABLE_PCPI(0),
 		.ENABLE_MUL(1),
+		.ENABLE_FAST_MUL(1),
+		.ENABLE_DIV(1),
+		.BARREL_SHIFTER(1),
 		.REGS_INIT_ZERO(1),
-		.PROGADDR_RESET(16'h0),
-		.PROGADDR_IRQ(16'h0),
-		.STACKADDR(16'h7fff)
+		.PROGADDR_RESET(16'h 0000_0000),
+		.STACKADDR(16'h 0000_7fff),
+		.ENABLE_IRQ(1),
+		.MASKED_IRQ(32'h 0000_0000),
+		.LATCHED_IRQ(32'h ffff_ffff),
+		.PROGADDR_IRQ(16'h 0000_060)
 	) picorv32(
 		.wb_rst_i	(rst_proc	),
-		.wb_clk_i	(s_sys_clk	),
+		.wb_clk_i	(s_sys_clk	),	
 		.trap			(trap			),
 		// Wishbone interface
 		.wbm_adr_o	(s_wbm_adr_o),		
@@ -221,18 +228,18 @@ module system (
 		.mem_instr	(mem_instr	)	
 	);
 	
-	picorv32_pcpi_mul pcpi_mul(
-		.clk			(s_sys_clk),
-		.resetn		(n_rst),
-		.pcpi_valid	(s_pcpi_valid),
-		.pcpi_insn	(s_pcpi_insn),
-		.pcpi_rs1	(s_pcpi_rs1),
-		.pcpi_rs2	(s_pcpi_rs2),
-		.pcpi_wr		(s_pcpi_wr),
-		.pcpi_rd		(s_pcpi_rd),
-		.pcpi_wait	(s_pcpi_wait),
-		.pcpi_ready	(s_pcpi_ready)
-	);
+//	picorv32_pcpi_mul pcpi_mul(
+//		.clk			(s_sys_clk),
+//		.resetn		(n_rst),
+//		.pcpi_valid	(s_pcpi_valid),
+//		.pcpi_insn	(s_pcpi_insn),
+//		.pcpi_rs1	(s_pcpi_rs1),
+//		.pcpi_rs2	(s_pcpi_rs2),
+//		.pcpi_wr		(s_pcpi_wr),
+//		.pcpi_rd		(s_pcpi_rd),
+//		.pcpi_wait	(s_pcpi_wait),
+//		.pcpi_ready	(s_pcpi_ready)
+//	);
 	
 	WB_slave_arbiter arbiter (
 		.i_wb_cyc			(s_wbm_cyc_o	),

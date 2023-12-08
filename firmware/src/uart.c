@@ -22,8 +22,8 @@ void put_str(const char string[]) {
 usize get_str(char string[], const usize max_length, const bool break_line) {
   usize i = 0;
   while (i < max_length - 1) {
-    while (!__uart_rx_ready) {
-    }
+    while (!__uart_rx_ready)
+      ;
     const char c = __uart_rx;
     if (break_line && c == '\n') {
       break;

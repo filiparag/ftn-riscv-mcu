@@ -12,16 +12,15 @@ SECTIONS {
 	.text 0x0 : {
 		. = ALIGN(4);
 		*(.init)
-		__reset = 0x00;
-		__irq_0 = 0x20;
-		__irq_1 = 0x40;
-		__irq_2 = 0x60;
+		__reset = 0x0;
+		__irq_handler = 0x60;
 		__text_start = . ;
 		*(.text)
 		*(.data)
 		*(.strings)
 		__text_end = . ;
 	} > bram
+	__global_pointer = . ;
 	.bss : {
 		__bss_start = . ;
 		*(.bss)
