@@ -6,11 +6,13 @@ module system (
 	input   	i_clk,
 	input		i_rst,
 
-	input   [7:0] 	i_switch,
-	input   [4:0] 	i_button, // 0bcenter_right_left_down_up
+	input   [7:0] 	i_sw,
+	input   [4:0] 	i_pb, // 0bcenter_right_left_down_up
 	output  [7:0] 	o_led,
-	output  [7:0] 	o_7segm,
-	output  [2:0] 	o_digit,
+	output  [7:0] 	o_n_col_or_7segm, // 0bDpABCDEFG
+	output  [2:0] 	o_mux_row_or_digit,
+	output  [1:0] 	o_mux_sel_color_or_7segm, // RGB7segm
+	output  [2:0] 	o_sem,
 
 	input  i_serial_rx,
 	output o_serial_tx,
@@ -227,19 +229,6 @@ module system (
 		.mem_instr	(mem_instr	)
 	);
 
-//	picorv32_pcpi_mul pcpi_mul(
-//		.clk			(s_sys_clk),
-//		.resetn		(n_rst),
-//		.pcpi_valid	(s_pcpi_valid),
-//		.pcpi_insn	(s_pcpi_insn),
-//		.pcpi_rs1	(s_pcpi_rs1),
-//		.pcpi_rs2	(s_pcpi_rs2),
-//		.pcpi_wr		(s_pcpi_wr),
-//		.pcpi_rd		(s_pcpi_rd),
-//		.pcpi_wait	(s_pcpi_wait),
-//		.pcpi_ready	(s_pcpi_ready)
-//	);
-
 	WB_slave_arbiter arbiter (
 		.i_wb_cyc			(s_wbm_cyc_o	),
 		.i_wb_stb			(s_wbm_stb_o	),
@@ -383,11 +372,13 @@ module system (
 		.o_wb_stall  (s_wb_periph_stall  ),
 		.o_wb_ack	 (s_wb_periph_ack	),
 		.o_wb_data	 (s_wb_periph_data_i	),
-		.o_periph_led (o_led),
-		.o_periph_7segm (o_7segm),
-		.o_periph_digit (o_digit),
-		.i_periph_btn (i_button),
-		.i_periph_sw (i_switch),
+		.o_led (o_led),
+		.o_sem (o_sem),
+		.o_mux_sel_color_or_7segm (o_mux_sel_color_or_7segm),
+		.o_n_col_or_7segm (o_n_col_or_7segm),
+		.o_mux_row_or_digit (o_mux_row_or_digit),
+		.i_sw (i_sw),
+		.i_pb (i_pb),
 		.i_uart_rx (i_uart_rx),
 		.o_uart_tx (o_uart_tx),
 		.o_irq (s_irq),

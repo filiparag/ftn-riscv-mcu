@@ -238,30 +238,30 @@ set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
 
 set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE WITH ERAM"
-set_location_assignment PIN_J12 -to o_7segm[7]
-set_location_assignment PIN_L12 -to o_7segm[0]
-set_location_assignment PIN_J2 -to o_7segm[1]
-set_location_assignment PIN_J1 -to o_7segm[2]
-set_location_assignment PIN_H4 -to o_7segm[3]
-set_location_assignment PIN_H5 -to o_7segm[4]
-set_location_assignment PIN_K10 -to o_7segm[5]
-set_location_assignment PIN_H8 -to o_7segm[6]
-set_location_assignment PIN_J13 -to o_digit[0]
-set_location_assignment PIN_K11 -to o_digit[1]
-set_location_assignment PIN_K12 -to o_digit[2]
-set_location_assignment PIN_M3 -to i_switch[0]
-set_location_assignment PIN_L3 -to i_switch[1]
-set_location_assignment PIN_M2 -to i_switch[2]
-set_location_assignment PIN_M1 -to i_switch[3]
-set_location_assignment PIN_N3 -to i_switch[4]
-set_location_assignment PIN_N2 -to i_switch[5]
-set_location_assignment PIN_K2 -to i_switch[6]
-set_location_assignment PIN_K1 -to i_switch[7]
-set_location_assignment PIN_E1 -to i_button[0]
-set_location_assignment PIN_C1 -to i_button[1]
-set_location_assignment PIN_D1 -to i_button[2]
-set_location_assignment PIN_E3 -to i_button[3]
-set_location_assignment PIN_C2 -to i_button[4]
+set_location_assignment PIN_J12 -to o_n_col_or_7segm[7]
+set_location_assignment PIN_L12 -to o_n_col_or_7segm[0]
+set_location_assignment PIN_J2 -to o_n_col_or_7segm[1]
+set_location_assignment PIN_J1 -to o_n_col_or_7segm[2]
+set_location_assignment PIN_H4 -to o_n_col_or_7segm[3]
+set_location_assignment PIN_H5 -to o_n_col_or_7segm[4]
+set_location_assignment PIN_K10 -to o_n_col_or_7segm[5]
+set_location_assignment PIN_H8 -to o_n_col_or_7segm[6]
+set_location_assignment PIN_J13 -to o_mux_row_or_digit[0]
+set_location_assignment PIN_K11 -to o_mux_row_or_digit[1]
+set_location_assignment PIN_K12 -to o_mux_row_or_digit[2]
+set_location_assignment PIN_M3 -to i_sw[0]
+set_location_assignment PIN_L3 -to i_sw[1]
+set_location_assignment PIN_M2 -to i_sw[2]
+set_location_assignment PIN_M1 -to i_sw[3]
+set_location_assignment PIN_N3 -to i_sw[4]
+set_location_assignment PIN_N2 -to i_sw[5]
+set_location_assignment PIN_K2 -to i_sw[6]
+set_location_assignment PIN_K1 -to i_sw[7]
+set_location_assignment PIN_E1 -to i_pb[0]
+set_location_assignment PIN_C1 -to i_pb[1]
+set_location_assignment PIN_D1 -to i_pb[2]
+set_location_assignment PIN_E3 -to i_pb[3]
+set_location_assignment PIN_C2 -to i_pb[4]
 set_location_assignment PIN_H13 -to i_uart_rx -comment D13
 set_location_assignment PIN_G12 -to o_uart_tx -comment D14
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_uart_rx
@@ -294,4 +294,10 @@ set_global_assignment -name QIP_FILE sdram_pll.qip
 set_global_assignment -name CDF_FILE output_files/lprs1_board.cdf
 set_global_assignment -name VHDL_FILE timers.vhd
 set_global_assignment -name VHDL_FILE lprs1_board_gpio.vhd
+
+
+
+set_location_assignment PIN_J10 -to o_mux_sel_color_or_7segm[0]
+set_location_assignment PIN_H10 -to o_mux_sel_color_or_7segm[1]
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

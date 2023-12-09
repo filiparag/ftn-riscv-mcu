@@ -30,7 +30,7 @@ void __irq(const usize irqs) {
   for (usize i = 0; i < IRQ_COUNT; ++i) {
     if (((1 << i) & irqs) && (irq_vector[i] != IRQ_UNSET)) {
       ++j;
-      irq_vector[i]();
+      irq_vector[i](irqs);
     }
   }
 }

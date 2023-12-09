@@ -10,7 +10,7 @@ void set_7segm(const u32 value) { __gpio_7segm = value; }
 
 enum __attribute__((always_inline)) DIGITAL_STATE
 get_btn(const enum BUTTON button) {
-  return (__gpio_btn_sw & 1 << (button + 8)) ? HIGH : LOW;
+  return (__gpio_btn_sw >> 8 & button) ? HIGH : LOW;
 }
 
 enum __attribute__((always_inline)) DIGITAL_STATE get_sw(const usize index) {

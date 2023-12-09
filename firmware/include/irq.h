@@ -8,7 +8,7 @@
 extern usize __irq_mask(const usize mask);
 extern void __irq_wait(const usize mask);
 
-typedef void (*irq_fn)(void);
+typedef void (*irq_fn)(const usize);
 
 enum IRQ {
   IRQ_ALL_DISABLED = 0,

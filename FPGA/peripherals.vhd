@@ -21,14 +21,17 @@ entity Peripherals is
 		o_wb_ack : out std_logic;
 		o_wb_data : out std_logic_vector(31 downto 0);
 		-- LEDs
-		o_periph_led : out std_logic_vector(7 downto 0);
-		-- 7 segment display
-		o_periph_7segm : out std_logic_vector(7 downto 0);
-		o_periph_digit : out std_logic_vector(2 downto 0);
+		o_led : out std_logic_vector(7 downto 0);
+		-- Display
+		o_n_col_or_7segm : out std_logic_vector(7 downto 0);
+		o_mux_row_or_digit : out std_logic_vector(2 downto 0);
+		o_mux_sel_color_or_7segm : out std_logic_vector(1 downto 0);
+		-- Semaphore
+		o_sem : out std_logic_vector(2 downto 0);
 		-- Buttons
-		i_periph_btn : in std_logic_vector(4 downto 0);
+		i_pb : in std_logic_vector(4 downto 0);
 		-- Switches
-		i_periph_sw : in std_logic_vector(7 downto 0);
+		i_sw : in std_logic_vector(7 downto 0);
 		-- UART
 		i_uart_rx : in std_logic;
 		o_uart_tx : out std_logic;
@@ -41,8 +44,12 @@ end Peripherals;
 architecture Behavioral of Peripherals is
 
 	signal s_led : std_logic_vector(7 downto 0);
+	
 	signal s_7segm : std_logic_vector(32 downto 0);
 	signal s_7segm_fb : std_logic_vector(31 downto 0);
+	
+	signal s_disp_data : std_logic_vector(31 downto 0);
+	signal s_disp_pos : std_logic_vector(31 downto 0);
 
 	signal s_uart_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_rx_dv : std_logic;
@@ -89,15 +96,16 @@ architecture Behavioral of Peripherals is
 	constant ADDR_TIMER_INT		: integer := 16#0028#;	--  32bit ro Timer interval
 
 	-- UART
-	constant ADDR_UART_RX_RDY	: integer := 16#0040#;	--  8bit ro UART receive ready
-	constant ADDR_UART_RX		: integer := 16#0044#;	--  8bit ro UART receive byte
-	constant ADDR_UART_TX		: integer := 16#0048#;	--	 8bit wo UART transmit byte
+	constant ADDR_UART_RX_RDY	: integer := 16#0030#;	--   8bit ro UART receive ready
+	constant ADDR_UART_RX		: integer := 16#0034#;	--   8bit ro UART receive byte
+	constant ADDR_UART_TX		: integer := 16#0038#;	--	  8bit wo UART transmit byte
 
 	-- LPRS1 board peripherals
-	constant ADDR_7SEGM_HEX		: integer := 16#0060#;	-- 16bit	rw	7segm hex
-	constant ADDR_7SEGM			: integer := 16#0064#;	-- 32bit	rw	7segm custom
-	constant ADDR_BTN_SW			: integer := 16#0068#;	-- 13bit	ro	Buttons and switches
-
+	constant ADDR_BTN_SW			: integer := 16#0040#;	--  13bit ro	Buttons and switches
+	constant ADDR_7SEGM_HEX		: integer := 16#0044#;	--  16bit rw	7segm hex
+	constant ADDR_7SEGM			: integer := 16#0048#;	--  32bit rw	7segm custom
+	constant ADDR_DISP			: integer := 16#004c#;	-- 192bit rw	LED matrix framebuffer
+	
 	-------------------------------
 	-- Interrupt register bitmap --
 	-------------------------------
@@ -164,17 +172,21 @@ begin
 		port map (
 			clk 				=> clk,
 			rst_n 			=> rst_n,
-			i_btn				=> i_periph_btn,
-			i_sw				=> i_periph_sw,
+			i_btn				=> i_pb,
+			i_sw				=> i_sw,
 			i_7segm_data	=> s_7segm,
+			i_disp_data		=> s_disp_data,
+			i_disp_pos		=> s_disp_pos,
 			o_7segm_fb		=> s_7segm_fb,
-			o_digit			=> o_periph_digit,
-			o_7segm			=> o_periph_7segm,
+			o_sem				=> o_sem,
+			o_row_digit		=> o_mux_row_or_digit,
+			o_col_7segm		=> o_n_col_or_7segm,
+			o_color_7segm	=> o_mux_sel_color_or_7segm,
 			o_btn_event		=> s_irq(IRQ_BTN),
 			o_sw_event		=> s_irq(IRQ_SW)
 		);
 
-	o_periph_led <= i_eoi(31 downto 30) & i_eoi(5 downto 0);
+	o_led <= s_led;
 
 	----------------
 	-- Interrupts --
@@ -183,7 +195,7 @@ begin
 	s_irq(29 downto 5) <= (others => '0');
 	s_irq(4) <= s_uart_rx_dv;
 	o_irq <= s_irq;
-
+	
 	------------------
 	-- Wishbone bus --
 	------------------
@@ -194,6 +206,8 @@ begin
 			
 			s_led <= (others => '0');
 			s_7segm <= "100001110011001110000010101011011"; -- LPrS
+			s_disp_data <= (others => '0');
+			s_disp_pos <= (others => '0');
 			
 			s_uart_tx_byte <= (others => '0');
 			s_uart_tx_dv <= '0';
@@ -222,6 +236,12 @@ begin
 					s_7segm(32) <= '1';
 					s_7segm(31 downto 0)	<= (i_wb_data and s_wb_sel_mask) or
 													(s_7segm(31 downto 0) and not s_wb_sel_mask);
+													
+				-- LED matrix
+				elsif i_wb_addr >= ADDR_DISP and i_wb_addr < ADDR_DISP + 256 then
+					s_disp_data <= (i_wb_data and s_wb_sel_mask) or
+										(s_disp_data and not s_wb_sel_mask);
+					s_disp_pos <= std_logic_vector(to_unsigned((to_integer(unsigned(i_wb_addr)) - ADDR_DISP) / 4, s_disp_pos'length));
 
 				-- UART TX
 				elsif i_wb_addr = ADDR_UART_TX then
@@ -270,7 +290,7 @@ begin
 
 				-- Buttons and switches
 				elsif i_wb_addr = ADDR_BTN_SW then
-					o_wb_data(12 downto 0) <=  i_periph_btn & i_periph_sw;
+					o_wb_data(12 downto 0) <=  i_pb & i_sw;
 					o_wb_data(31 downto 13) <= (others => '0');
 
 				-- Nanosecond runtime counter (lower half)
