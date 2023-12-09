@@ -11,9 +11,12 @@
 #define i32 int32_t
 #define u32 uint32_t
 
-#define isize uint32_t
+#define i64 int64_t
+#define u64 uint64_t
+
+#define isize int32_t
 #define usize uint32_t
 
-#define bool uint32_t
+#define bool usize
 #define true 1
 #define false 0

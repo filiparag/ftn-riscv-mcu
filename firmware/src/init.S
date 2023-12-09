@@ -3,12 +3,21 @@
 .section .init
 .global __reset
 .global __irq_handler
+.global __irq_mask
+.global __irq_wait
 .global __init
 .type __reset @function
 .type __irq_handler @function
+.type __irq_mask @function
+.type __irq_wait @function
 .type __init @function
 
 __reset:
+
+	/* disable all interrupts */
+
+	li		t1, 0xFFFFFFFF
+	picorv32_maskirq_insn(x0, t1)
 
 	lui     sp, %hi(__stack_start)
 	addi    sp, sp, %lo(__stack_start)
@@ -37,10 +46,7 @@ clear_bss:
 	beq		x0, x0, clear_bss
 done_bss:
 
-	li		t1, 0x00000000
-	picorv32_maskirq_insn(t1, t1)
-
-	li		a0, 0xb003
+	li		a0, 0xb002
 	call	debug
 
     j       __init
@@ -161,14 +167,29 @@ irq_stack_end:
 irq_stack_start:
 
 debug:
+
 	li      a5, 0x8000
 	sw      a0, 4(a5)
 	ret
 
+__irq_mask:
+
+	picorv32_maskirq_insn(x0, a0)
+	ret
+
+__irq_wait:
+
+	picorv32_waitirq_insn(a0)
+	ret
+
 __init:
 
-	li		a0, 0xa001
+	li		a0, 0xb003
 	call	debug
+
+	/* enable all interrupts */
+
+	picorv32_maskirq_insn(x0, x0)
 
 	/* zero-initialize all registers */
 

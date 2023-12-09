@@ -1,9 +1,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
 
-entity Peripherals is port (
+entity Peripherals is
+	generic (
+		g_CLK_FREQ_HZ : positive := 50_000_000
+	);
+	port (
 		clk : in std_logic;
 		rst_n : in std_logic;
 		i_wb_cyc : in std_logic;
@@ -26,21 +31,17 @@ entity Peripherals is port (
 		i_periph_sw : in std_logic_vector(7 downto 0);
 		-- UART
 		i_uart_rx : in std_logic;
-		o_uart_tx : out std_logic
+		o_uart_tx : out std_logic;
+		-- External IRQ
+		i_eoi : in std_logic_vector(31 downto 0);
+		o_irq : out std_logic_vector(31 downto 0)
 	);
-end entity;
+end Peripherals;
 
 architecture Behavioral of Peripherals is
 
 	signal s_led : std_logic_vector(7 downto 0);
-
-	signal s_digit : std_logic_vector(1 downto 0);
-	signal s_digit_hex : std_logic_vector(3 downto 0);
 	signal s_7segm : std_logic_vector(32 downto 0);
-	signal s_7segm_timer : std_logic_vector(15 downto 0);
-
-	signal s_btn : std_logic_vector(4 downto 0);
-	signal s_sw : std_logic_vector(7 downto 0);
 
 	signal s_uart_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_tx_byte : std_logic_vector(7 downto 0);
@@ -49,17 +50,87 @@ architecture Behavioral of Peripherals is
 	signal s_uart_tx_active : std_logic;
 	signal s_uart_tx_done : std_logic;
 	signal s_uart_tx_busy : std_logic;
-	signal s_uart_rx_waiting : std_logic;
 	signal s_uart_rx_ready : std_logic;
+	
+	signal s_btn_sw : std_logic_vector(12 downto 0);
+	signal s_btn_sw_changed : std_logic;
+	
+	signal s_runtime_nanos : std_logic_vector(63 downto 0);
+	
+	signal s_timer_rst : std_logic_vector(3 downto 0);
+	signal s_timer_sel : std_logic_vector(1 downto 0);
+	signal s_timer_int_ns : std_logic_vector(63 downto 0);
 
 	signal s_wb_ack : std_logic;
 	signal s_wb_stall : std_logic;
+	signal s_wb_sel_mask : std_logic_vector(31 downto 0);
+	signal s_wb_sel_mask_64bit : std_logic_vector(63 downto 0);
+	
+	signal s_irq : std_logic_vector(31 downto 0);
+	
+	---------------------------
+	-- Peripheral memory map --
+	---------------------------
+	
+	-- MAX1000 board
+	constant ADDR_LED 			: integer := 16#0000#;	--   8bit rw LED
+	
+	-- Internal counters
+	constant ADDR_COUNTER_NS	: integer := 16#0004#;	--  64bit ro Runtime counter (ns)
+	constant ADDR_COUNTER_US	: integer := 16#000C#;	--  32bit ro Runtime counter (us)
+	constant ADDR_COUNTER_MS	: integer := 16#0010#;	--  32bit ro Runtime counter (ms)
+	
+	-- Timers
+	constant ADDR_TIMER_RST		: integer := 16#0014#;	--   4bit rw Timer reset
+	constant ADDR_TIMER_SEL		: integer := 16#0018#;	--   2bit rw Timer select
+	constant ADDR_TIMER_INT		: integer := 16#001c#;	--  64bit ro Timer interval
+	
+	-- UART
+	constant ADDR_UART_RX_RDY	: integer := 16#0040#;	--  8bit ro UART receive ready
+	constant ADDR_UART_RX		: integer := 16#0044#;	--  8bit ro UART receive byte
+	constant ADDR_UART_TX		: integer := 16#0048#;	--	 8bit wo UART transmit byte
+	
+	-- LPRS1 board peripherals
+	constant ADDR_7SEGM_HEX		: integer := 16#0060#;	-- 16bit	rw	7segm hex
+	constant ADDR_7SEGM			: integer := 16#0064#;	-- 32bit	rw	7segm custom
+	constant ADDR_BTN_SW			: integer := 16#0068#;	-- 13bit	ro	Buttons and switches
+	
+	-------------------------------
+	-- Interrupt register bitmap --
+	-------------------------------
+	
+	constant IRQ_TIMER0			: integer := 0;	--   Timer 0 interval has elapsed
+	constant IRQ_TIMER1			: integer := 1;	--   Timer 1 interval has elapsed
+	constant IRQ_TIMER2			: integer := 2;	--   Timer 2 interval has elapsed
+	constant IRQ_TIMER3			: integer := 3;	--   Timer 3 interval has elapsed
+	constant IRQ_UART_RX			: integer := 4;	--   UART byte received
+	constant IRQ_BTN				: integer := 30;	--   Button interaction event
+	constant IRQ_SW				: integer := 31;	--   Switch interaction event
 
 begin
 
-	uart_rx : entity work.UART_RX(RTL)
+	----------------
+	-- Components --
+	----------------
+	
+	timers : entity work.Timers
 		generic map (
-			g_CLKS_PER_BIT => 25
+			g_NANOS_PER_CLK 	=> 1_000_000_000 / g_CLK_FREQ_HZ, -- 20ns,
+			g_TIMER_COUNT 		=> 4
+		)
+		port map (
+			clk 					=> clk,
+			rst_n 				=> rst_n,
+			i_timer_rst			=> s_timer_rst,
+			i_timer_sel 		=> s_timer_sel,
+			i_timer_int			=>	s_timer_int_ns,
+			o_timer_ev			=> s_irq(IRQ_TIMER3 downto IRQ_TIMER0),
+			o_runtime_ns		=> s_runtime_nanos
+		);
+	
+	uart_rx : entity work.UART_RX
+		generic map (
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 2_000_000 -- 2Mbps
 		)
 		port map (
 			i_Clk       => clk,
@@ -68,9 +139,9 @@ begin
 			o_RX_Byte   => s_uart_rx_byte
 		);
 
-	uart_tx : entity work.UART_TX(RTL)
+	uart_tx : entity work.UART_TX
 		generic map (
-			g_CLKS_PER_BIT => 25
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 2_000_000 -- 2Mbps
 		)
 		port map (
 			i_Clk       => clk,
@@ -80,89 +151,93 @@ begin
 			o_TX_Serial => o_uart_tx,
 			o_TX_Done   => s_uart_tx_done
 		);
-
-	display_heartbeat : process(clk, rst_n)
-	begin
-		if rst_n = '0' then
-			s_7segm_timer <= (others => '0');
-			s_digit <= (others => '0');
-		else
-			if rising_edge(clk) then
-				if s_7segm_timer > 50000 then
-					s_digit <= s_digit + 1;
-					s_7segm_timer <= (others => '0');
-				else
-					s_digit <= s_digit;
-					s_7segm_timer <= s_7segm_timer + 1;
-				end if;
-			end if;
-		end if;
-	end process;
-
-	o_periph_digit <= "0" & s_digit;
-	select_digit : process(s_digit, s_7segm)
-	begin
-		case s_digit is
-			when "11" => s_digit_hex <= s_7segm(15 downto 12);
-			when "10" => s_digit_hex <= s_7segm(11 downto 8);
-			when "01" => s_digit_hex <= s_7segm(7 downto 4);
-			when others => s_digit_hex <= s_7segm(3 downto 0);
-		end case;
-	end process;
-
-	display_digit : process(s_digit_hex, s_7segm)
-	begin
-		if s_7segm(32) = '1' then
-			case s_digit is
-				when "00" => o_periph_7segm <= not s_7segm(7 downto 0);
-				when "01" => o_periph_7segm <= not s_7segm(15 downto 8);
-				when "10" => o_periph_7segm <= not s_7segm(23 downto 16);
-				when others => o_periph_7segm <= not s_7segm(31 downto 24);
-			end case;
-		else
-			case s_digit_hex is
-				when "0001" => o_periph_7segm <= "11001111";
-				when "0010" => o_periph_7segm <= "10010010";
-				when "0011" => o_periph_7segm <= "10000110";
-				when "0100" => o_periph_7segm <= "11001100";
-				when "0101" => o_periph_7segm <= "10100100";
-				when "0110" => o_periph_7segm <= "10100000";
-				when "0111" => o_periph_7segm <= "10001111";
-				when "1000" => o_periph_7segm <= "10000000";
-				when "1001" => o_periph_7segm <= "10000100";
-				when "1010" => o_periph_7segm <= "10000010";
-				when "1011" => o_periph_7segm <= "11100000";
-				when "1100" => o_periph_7segm <= "10110001";
-				when "1101" => o_periph_7segm <= "11000010";
-				when "1110" => o_periph_7segm <= "10110000";
-				when "1111" => o_periph_7segm <= "10111000";
-				when others => o_periph_7segm <= "10000001";
-			end case;
-		end if;
-	end process;
-
-	o_periph_led <= s_led;
-
+		
+	lprs1_board_gpio : entity work.LPRS1_Board_GPIO
+		generic map (
+			g_NANOS_PER_CLK => 1_000_000_000 / g_CLK_FREQ_HZ -- 20ns
+		)
+		port map (
+			clk 				=> clk,
+			rst_n 			=> rst_n,
+			i_btn				=> i_periph_btn,
+			i_sw				=> i_periph_sw,
+			i_7segm_data	=> s_7segm,
+			o_digit			=> o_periph_digit,
+			o_7segm			=> o_periph_7segm,
+			o_btn_event		=> s_irq(IRQ_BTN),
+			o_sw_event		=> s_irq(IRQ_SW)
+		);
+	
+	o_periph_led <= i_eoi(31 downto 30) & i_eoi(5 downto 0);
+	
+	----------------
+	-- Interrupts --
+	----------------
+	
+	s_irq(29 downto 5) <= (others => '0');
+	s_irq(4) <= s_uart_rx_ready;
+	o_irq <= s_irq;
+	--o_irq(31 downto 30) <= s_irq(31 downto 30);
+	--o_irq(29 downto 0) <= (others => '0');
+	
+	------------------
+	-- Wishbone bus --
+	------------------
+	
 	wb_write : process(clk, rst_n)
 	begin
 		if(rst_n = '0') then
 			s_led <= (others => '0');
-			s_7segm <= "100001110011001110000010101011011";
+			s_7segm <= "100001110011001110000010101011011"; -- LPrS
 			s_uart_tx_byte <= (others => '0');
 			s_uart_tx_dv <= '0';
+			s_timer_rst <= (others => '1');
+			s_timer_sel <= (others => '0');
+			s_timer_int_ns <= (others => '1');
 		elsif rising_edge(clk) then
 			if i_wb_stb = '1' and i_wb_we = '1' then
-				if i_wb_addr = x"000" then -- LED
-					s_led <= i_wb_data(7 downto 0);
-				elsif i_wb_addr = x"004" then -- 7segm hex
-					s_7segm <= '0' & i_wb_data;
-				elsif i_wb_addr = x"0008" then -- 7segm custom
-					s_7segm <= '1' & i_wb_data;
-				elsif i_wb_addr = x"ffc" then -- UART TX
+				
+				-- LED
+				if i_wb_addr = ADDR_LED then
+					s_led <= (i_wb_data(7 downto 0) and s_wb_sel_mask(7 downto 0)) or
+								(s_led and not s_wb_sel_mask(7 downto 0));
+
+				-- 7segm hex
+				elsif i_wb_addr = ADDR_7SEGM_HEX then
+					s_7segm(32) <= '0';
+					s_7segm(15 downto 0)	<= (i_wb_data(15 downto 0) and s_wb_sel_mask(15 downto 0)) or
+													(s_7segm(15 downto 0) and not s_wb_sel_mask(15 downto 0));
+
+				-- 7segm custom
+				elsif i_wb_addr = ADDR_7SEGM then
+					s_7segm(32) <= '1';
+					s_7segm(31 downto 0)	<= (i_wb_data and s_wb_sel_mask) or
+													(s_7segm(31 downto 0) and not s_wb_sel_mask);
+
+				-- UART TX
+				elsif i_wb_addr = ADDR_UART_TX then
 					if s_uart_tx_active = '0' and s_uart_tx_dv <= '0' then
 						s_uart_tx_byte <= i_wb_data(7 downto 0);
 						s_uart_tx_dv <= '1';
 					end if;
+
+				-- Timer reset
+				elsif i_wb_addr = ADDR_TIMER_RST then
+					s_timer_rst <= (i_wb_data(s_timer_rst'length-1 downto 0) and s_wb_sel_mask(s_timer_rst'length-1 downto 0));
+
+				-- Timer select
+				elsif i_wb_addr = ADDR_TIMER_SEL then
+					s_timer_sel <= (i_wb_data(s_timer_sel'length-1 downto 0) and s_wb_sel_mask(s_timer_sel'length-1 downto 0));
+
+				-- Timer interval (lower half)
+				elsif i_wb_addr = ADDR_TIMER_INT then
+					
+					s_timer_int_ns(31 downto 0) <= (i_wb_data and s_wb_sel_mask) or
+															 (s_timer_int_ns(31 downto 0) and not s_wb_sel_mask);
+				-- Timer interval (upper half)
+				elsif i_wb_addr = ADDR_TIMER_INT + 4 then
+					s_timer_int_ns(63 downto 32) <= (i_wb_data and s_wb_sel_mask) or
+															  (s_timer_int_ns(63 downto 32) and not s_wb_sel_mask);
 				end if;
 			end if;
 			if s_uart_tx_dv = '1' then
@@ -171,29 +246,71 @@ begin
 		end if;
 	end process;
 
-	wb_read : process(clk, rst_n)
+	wb_read : process(clk, rst_n, s_uart_rx_dv)
 		variable v_uart_rx_buffer_addr : integer;
 	begin
 		if(rst_n = '0') then
 			s_uart_rx_ready <= '0';
-			s_uart_rx_waiting <= '0';
 		elsif rising_edge(clk) then
 			if i_wb_stb = '1' and i_wb_we = '0' then
-				if i_wb_addr = x"00c" then -- Buttons and switches
+
+				 -- LED
+				if i_wb_addr = ADDR_LED then
+					o_wb_data(7 downto 0) <= s_led;
+
+				 -- 7segm hex
+				elsif i_wb_addr = ADDR_7SEGM_HEX then
+					o_wb_data(15 downto 0) <= s_7segm(15 downto 0);
+					o_wb_data(31 downto 19) <= (others => '0');
+
+				-- 7segm custom
+				elsif i_wb_addr = ADDR_7SEGM_HEX then
+					o_wb_data <= s_7segm(31 downto 0);
+
+				-- Buttons and switches
+				elsif i_wb_addr = ADDR_BTN_SW then 
 					o_wb_data(12 downto 0) <=  i_periph_btn & i_periph_sw;
 					o_wb_data(31 downto 13) <= (others => '0');
-				elsif i_wb_addr = x"ff4" then -- UART RX ready
+
+				-- Millisecond runtime counter
+				elsif i_wb_addr = ADDR_COUNTER_MS then
+					o_wb_data <= std_logic_vector(unsigned(s_runtime_nanos) / 1_000_000)(31 downto 0);
+
+				-- Microsecond runtime counter
+				elsif i_wb_addr = ADDR_COUNTER_US then
+					o_wb_data <= std_logic_vector(unsigned(s_runtime_nanos) / 1_000)(31 downto 0);
+
+				-- Nanosecond runtime counter (lower half)
+				elsif i_wb_addr = ADDR_COUNTER_NS then
+					o_wb_data <= s_runtime_nanos(31 downto 0);
+				-- Nanosecond runtime counter (upper half)
+				elsif i_wb_addr = ADDR_COUNTER_NS + 4 then
+					o_wb_data <= s_runtime_nanos(63 downto 32);
+
+				-- UART RX ready
+				elsif i_wb_addr = ADDR_UART_RX_RDY then 
 					o_wb_data(0) <= s_uart_rx_ready;
 					o_wb_data(31 downto 1) <= (others => '0');
-				elsif i_wb_addr = x"ff8" then -- UART RX
+
+				-- UART RX
+				elsif i_wb_addr = ADDR_UART_RX then 
 					if s_uart_rx_ready = '1' then
 						o_wb_data(7 downto 0) <=  s_uart_rx_byte;
 						o_wb_data(31 downto 8) <= (others => '0');
 						s_uart_rx_ready <= '0';
-						s_uart_rx_waiting <= '0';
-					else
-						s_uart_rx_waiting <= '1';
 					end if;
+
+				-- Timer reset
+				elsif i_wb_addr = ADDR_TIMER_RST then
+					o_wb_data(s_timer_rst'length-1 downto 0) <= s_timer_rst;
+					o_wb_data(31 downto s_timer_rst'length) <= (others => '0');
+
+				-- Timer select
+				elsif i_wb_addr = ADDR_TIMER_SEL then
+					o_wb_data(s_timer_sel'length-1 downto 0) <= s_timer_sel;
+					o_wb_data(31 downto s_timer_sel'length) <= (others => '0');
+
+				-- Other address
 				else
 					o_wb_data <= (others => '1');
 				end if;
@@ -203,8 +320,8 @@ begin
 			s_uart_rx_ready <= '1';
 		end if;
 	end process;
-
-	wb_ack: process(clk, rst_n)
+	
+	wb_ack : process(clk, rst_n)
    begin
       if rising_edge(clk) then
          if rst_n = '0' then
@@ -221,7 +338,7 @@ begin
 
 	s_wb_stall <= s_uart_tx_busy;
 
-	wb_stall : process(s_uart_tx_active, s_uart_tx_done)
+	wb_stall : process(rst_n, clk)
 	begin
 		if(rst_n = '0') then
 			s_uart_tx_busy <= '0';
@@ -238,5 +355,10 @@ begin
 
 	o_wb_ack <= s_wb_ack and i_wb_stb and not s_wb_stall;
 	o_wb_stall <= s_wb_stall;
+	
+	s_wb_sel_mask(31 downto 24) <= x"ff" when i_wb_sel(3) = '1' else x"00";
+	s_wb_sel_mask(23 downto 16) <= x"ff" when i_wb_sel(2) = '1' else x"00";
+	s_wb_sel_mask(15 downto 8) <= x"ff" when i_wb_sel(1) = '1' else x"00";
+	s_wb_sel_mask(7 downto 0) <= x"ff" when i_wb_sel(0) = '1' else x"00";
 
 end Behavioral;

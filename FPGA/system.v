@@ -192,7 +192,7 @@ module system (
 		.BARREL_SHIFTER(1),
 		.REGS_INIT_ZERO(1),
 		.PROGADDR_RESET(16'h 0000_0000),
-		.STACKADDR(16'h 0000_7fff),
+		.STACKADDR(16'h 0000_7ffc),
 		.ENABLE_IRQ(1),
 		.MASKED_IRQ(32'h 0000_0000),
 		.LATCHED_IRQ(32'h ffff_ffff),
@@ -404,7 +404,9 @@ module system (
 		.i_periph_btn (i_button),
 		.i_periph_sw (i_switch),
 		.i_uart_rx (i_uart_rx),
-		.o_uart_tx (o_uart_tx)
+		.o_uart_tx (o_uart_tx),
+		.o_irq (s_irq),
+		.i_eoi (s_eoi)
 	);
 	
 	RST_Reg rstreg (
