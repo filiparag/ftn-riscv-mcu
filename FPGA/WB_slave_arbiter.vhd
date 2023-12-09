@@ -54,8 +54,8 @@ architecture rtl of wb_slave_arbiter is
 	
 begin
 
-	-- Firmware		0x000000 - 0x000FFF (4KiB)   \
-	-- Stack			0x001000 - 0x007FFF (28KiB)   | BRAM
+	-- Firmware		0x000000 - 0x002FFF (12KiB)   \
+	-- Stack			0x003000 - 0x007FFF (20KiB)   | BRAM
 	-- Peripherals	0x008000 - 0x00BFFF (16KiB)  /
 	-- Data 		   0x00C000 - 0x10BFFF (1MiB)   >  SDRAM
 

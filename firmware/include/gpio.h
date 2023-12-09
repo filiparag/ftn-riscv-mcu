@@ -14,11 +14,11 @@ enum DIGITAL_STATE {
 };
 
 enum BUTTON {
-  UP = 0b00001,
-  DOWN = 0b00010,
-  LEFT = 0b00100,
-  RIGHT = 0b01000,
-  CENTER = 0b10000,
+  BTN_UP = 0b00001,
+  BTN_DOWN = 0b00010,
+  BTN_LEFT = 0b00100,
+  BTN_RIGHT = 0b01000,
+  BTN_CENTER = 0b10000,
 };
 
 void set_led(const usize index, const enum DIGITAL_STATE state);

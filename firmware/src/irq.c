@@ -1,23 +1,36 @@
+#include "../include/irq.h"
+#include "../include/gpio.h"
 #include "../include/types.h"
 
-#include "../include/gpio.h"
-#include "../include/irq.h"
+static irq_fn irq_vector[IRQ_COUNT];
 
-static irq_fn irq_vector[IRQ_COUNT] = {IRQ_UNSET};
-
-void irq_enable(const enum IRQ mask) { __irq_mask(~mask); }
+usize irq_enable(const enum IRQ mask) { return ~__irq_mask(~mask); }
 
 void irq_wait(const enum IRQ mask) { __irq_wait(mask); }
 
 void irq_set_handler(const enum IRQ irq, const irq_fn handler) {
-  irq_vector[irq] = handler;
+  usize bitmap = irq;
+  usize index = 0;
+  while (!(bitmap & 1)) {
+    bitmap >>= 1;
+    ++index;
+  }
+  irq_vector[index] = handler;
 }
 
-usize *irq(usize *regs, const usize irqs) {
+void __irq_init(void) {
+  __gpio_7segm_hex = 0xb005;
   for (usize i = 0; i < IRQ_COUNT; ++i) {
-    if ((1 << i) & irqs) {
-      irq_vector[i](regs);
+    irq_vector[i] = IRQ_UNSET;
+  }
+}
+
+void __irq(const usize irqs) {
+  volatile usize j = 0;
+  for (usize i = 0; i < IRQ_COUNT; ++i) {
+    if (((1 << i) & irqs) && (irq_vector[i] != IRQ_UNSET)) {
+      ++j;
+      irq_vector[i]();
     }
   }
-  return regs;
 }

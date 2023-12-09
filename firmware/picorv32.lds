@@ -32,9 +32,9 @@ SECTIONS {
 		*(.sbss)
 		__sbss_end = . ;
 	} > bram
-	.stack 0x1000 : {
+	.stack 0x3000 : {
 		__stack_end = . ;
-		. = . + 0x6FFC;
+		. = . + 0x4FFC;
 		__stack_start = . ;
 	} > bram
 	.mmap 0x8000 : {
@@ -43,11 +43,11 @@ SECTIONS {
 		__gpio_led = . + 0x0000;
 		__counter_nanos = . + 0x0004;
 		__counter_micros = . + 0x000C;
-		__counter_millis = . + 0x0010;
-		__timer_reset = . + 0x0014;
-		__timer_select = . + 0x0018;
-		__timer_interval = . + 0x001c;
-		__uart_rx_ready = . + 0x0040;
+		__counter_millis = . + 0x0014;
+		__timer_reset = . + 0x0020;
+		__timer_select = . + 0x0024;
+		__timer_interval = . + 0x0028;
+		__uart_rx_recv = . + 0x0040;
 		__uart_rx = . + 0x0044;
 		__uart_tx = . + 0x0048;
 		__gpio_7segm_hex = . + 0x060;

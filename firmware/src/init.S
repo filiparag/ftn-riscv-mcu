@@ -22,7 +22,7 @@ __reset:
 	lui     sp, %hi(__stack_start)
 	addi    sp, sp, %lo(__stack_start)
 
-	li		a0, 0xb000
+	li		a0, 0xb001
 	call	debug
 
     /* set global pointer */
@@ -32,7 +32,7 @@ __reset:
     la      gp, __global_pointer
 .option pop
 
-	li		a0, 0xb001
+	li		a0, 0xb002
 	call	debug
 
     /* clear .bss and .sbss */
@@ -46,7 +46,7 @@ clear_bss:
 	beq		x0, x0, clear_bss
 done_bss:
 
-	li		a0, 0xb002
+	li		a0, 0xb003
 	call	debug
 
     j       __init
@@ -105,16 +105,14 @@ __irq_handler:
 	lui     sp, %hi(irq_stack_start)
 	addi    sp, sp, %lo(irq_stack_start)
 
-	lui     a0, %hi(irq_regs) // arg0 = address of regs
-	addi    a0, a0, %lo(irq_regs)
+    picorv32_getq_insn(a0, q1) // arg1 = interrupt type
 
-    picorv32_getq_insn(a1, q1) // arg1 = interrupt type
-
-	jal     ra, irq // call to C function
+	call	__irq // call to C function
 
     /* restore registers */
 
-	addi    x1, a0, 0 // new irq_regs address returned from C code in a0
+	lui     x1, %hi(irq_regs)
+	addi    x1, x1, %lo(irq_regs)
 
 	lw      x2,   0*4(x1)
 	picorv32_setq_insn(q0, x2)
@@ -174,7 +172,7 @@ debug:
 
 __irq_mask:
 
-	picorv32_maskirq_insn(x0, a0)
+	picorv32_maskirq_insn(a0, a0)
 	ret
 
 __irq_wait:
@@ -184,12 +182,8 @@ __irq_wait:
 
 __init:
 
-	li		a0, 0xb003
+	li		a0, 0xb004
 	call	debug
-
-	/* enable all interrupts */
-
-	picorv32_maskirq_insn(x0, x0)
 
 	/* zero-initialize all registers */
 
@@ -227,6 +221,8 @@ __init:
 
     lui     sp, %hi(__stack_start)
 	addi    sp, sp, %lo(__stack_start)
+
+	call	__irq_init
     j       main
 
     ebreak

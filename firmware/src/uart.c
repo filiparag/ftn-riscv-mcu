@@ -3,7 +3,7 @@
 void put_ch(const char character) { __uart_tx = character; }
 
 bool get_ch(char *const character) {
-  if (__uart_rx_ready) {
+  if (__uart_rx_recv) {
     *character = __uart_rx;
     return 1;
   } else {
@@ -11,26 +11,16 @@ bool get_ch(char *const character) {
   }
 }
 
-void put_str(const char string[]) {
-  usize i = 0;
-  while (string[i] != '\0') {
-    __uart_tx = string[i];
-    ++i;
+void put_buff(const char *const buffer, const usize length) {
+  for (usize i = 0; i < length; ++i) {
+    __uart_tx = buffer[i];
   }
 }
 
-usize get_str(char string[], const usize max_length, const bool break_line) {
-  usize i = 0;
-  while (i < max_length - 1) {
-    while (!__uart_rx_ready)
+void get_buff(char *const buffer, const usize length) {
+  for (usize i = 0; i < length; ++i) {
+    while (!__uart_rx_recv)
       ;
-    const char c = __uart_rx;
-    if (break_line && c == '\n') {
-      break;
-    }
-    string[i] = c;
-    ++i;
+    buffer[i] = __uart_rx;
   }
-  string[i] = '\0';
-  return i;
 }
