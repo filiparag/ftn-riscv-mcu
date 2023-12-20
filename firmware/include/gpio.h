@@ -3,6 +3,9 @@
 #include "types.h"
 #include "uart.h"
 
+#define DISP_ROWS 8
+#define DISP_COLS 8
+
 struct PIXEL {
   usize red : 1;
   usize green : 1;
@@ -16,7 +19,7 @@ extern volatile u8 __gpio_led;
 extern volatile u16 __gpio_7segm_hex;
 extern volatile u32 __gpio_7segm;
 
-extern volatile struct PIXEL __gpio_disp[8][8];
+extern volatile struct PIXEL __gpio_disp[DISP_ROWS][DISP_COLS];
 
 enum DIGITAL_STATE {
   LOW = 0,

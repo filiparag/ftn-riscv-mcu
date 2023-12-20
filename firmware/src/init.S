@@ -107,7 +107,7 @@ __irq_handler:
 
     picorv32_getq_insn(a0, q1) // arg1 = interrupt type
 
-	call	__irq // call to C function
+	call	__isr // call to C function
 
     /* restore registers */
 

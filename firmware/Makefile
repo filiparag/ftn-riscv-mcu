@@ -1,6 +1,6 @@
-.PRECIOUS: build/%.elf
+.PRECIOUS: build/%.elf build/%.bin
 
-PORT        ?= /dev/ttyUSB0
+PORT        ?= /dev/serial/by-id/usb-Arrow_Arrow_USB_Blaster_AR45NPS4-if01-port0
 TOOLCHAIN   ?= /opt/riscv/bin/riscv32-unknown-elf-
 LOADER      ?= ../software/max1000_riscv_loader/build/max1000_riscv_loader
 TARGET      ?= lprs_cpu_bootloader

@@ -53,12 +53,14 @@ architecture Behavioral of Peripherals is
 
 	signal s_uart_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_rx_dv : std_logic;
-	signal s_uart_rx_recv : std_logic;
 	
 	signal s_uart_tx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_tx_dv : std_logic;
 	signal s_uart_tx_active : std_logic;
 	signal s_uart_tx_done : std_logic;
+	
+	signal s_uart_rx_ready : std_logic;
+	signal s_uart_tx_ready : std_logic;
 
 	signal s_btn_sw : std_logic_vector(12 downto 0);
 	signal s_btn_sw_changed : std_logic;
@@ -97,14 +99,15 @@ architecture Behavioral of Peripherals is
 
 	-- UART
 	constant ADDR_UART_RX_RDY	: integer := 16#0030#;	--   8bit ro UART receive ready
-	constant ADDR_UART_RX		: integer := 16#0034#;	--   8bit ro UART receive byte
-	constant ADDR_UART_TX		: integer := 16#0038#;	--	  8bit wo UART transmit byte
+	constant ADDR_UART_TX_RDY	: integer := 16#0034#;	--   8bit ro UART transmit ready
+	constant ADDR_UART_RX		: integer := 16#0038#;	--   8bit ro UART receive byte
+	constant ADDR_UART_TX		: integer := 16#003C#;	--	  8bit wo UART transmit byte
 
 	-- LPRS1 board peripherals
 	constant ADDR_BTN_SW			: integer := 16#0040#;	--  13bit ro	Buttons and switches
 	constant ADDR_7SEGM_HEX		: integer := 16#0044#;	--  16bit rw	7segm hex
 	constant ADDR_7SEGM			: integer := 16#0048#;	--  32bit rw	7segm custom
-	constant ADDR_DISP			: integer := 16#004c#;	-- 192bit rw	LED matrix framebuffer
+	constant ADDR_DISP			: integer := 16#004C#;	-- 192bit rw	LED matrix framebuffer
 	
 	-------------------------------
 	-- Interrupt register bitmap --
@@ -115,6 +118,7 @@ architecture Behavioral of Peripherals is
 	constant IRQ_TIMER2			: integer := 2;	--   Timer 2 interval has elapsed
 	constant IRQ_TIMER3			: integer := 3;	--   Timer 3 interval has elapsed
 	constant IRQ_UART_RX			: integer := 4;	--   UART byte received
+	constant IRQ_UART_TX			: integer := 5;	--   UART byte transmitted
 	constant IRQ_BTN				: integer := 30;	--   Button interaction event
 	constant IRQ_SW				: integer := 31;	--   Switch interaction event
 
@@ -143,7 +147,7 @@ begin
 
 	uart_rx : entity work.UART_RX
 		generic map (
-			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 2_000_000 -- 2Mbps
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
 		)
 		port map (
 			i_Clk       => clk,
@@ -154,7 +158,7 @@ begin
 
 	uart_tx : entity work.UART_TX
 		generic map (
-			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 2_000_000 -- 2Mbps
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
 		)
 		port map (
 			i_Clk       => clk,
@@ -178,7 +182,7 @@ begin
 			i_disp_data		=> s_disp_data,
 			i_disp_pos		=> s_disp_pos,
 			o_7segm_fb		=> s_7segm_fb,
-			o_sem				=> o_sem,
+			--o_sem				=> o_sem,
 			o_row_digit		=> o_mux_row_or_digit,
 			o_col_7segm		=> o_n_col_or_7segm,
 			o_color_7segm	=> o_mux_sel_color_or_7segm,
@@ -187,19 +191,25 @@ begin
 		);
 
 	o_led <= s_led;
+	
+	o_sem(1) <= s_uart_rx_ready;
+	o_sem(0) <= s_uart_tx_ready;
 
 	----------------
 	-- Interrupts --
 	----------------
 
-	s_irq(29 downto 5) <= (others => '0');
+	s_irq(29 downto 6) <= (others => '0');
 	s_irq(4) <= s_uart_rx_dv;
+	s_irq(5) <= s_uart_tx_done;
 	o_irq <= s_irq;
 	
 	------------------
 	-- Wishbone bus --
 	------------------
 
+	s_uart_tx_ready <= not s_uart_tx_active and not s_uart_tx_dv;
+	
 	wb_write : process(clk, rst_n)
 	begin
 		if(rst_n = '0') then
@@ -245,7 +255,7 @@ begin
 
 				-- UART TX
 				elsif i_wb_addr = ADDR_UART_TX then
-					if s_uart_tx_active = '0' and s_uart_tx_dv <= '0' then
+					if s_uart_tx_active = '0' and s_uart_tx_dv = '0' then
 						s_uart_tx_byte <= i_wb_data(7 downto 0);
 						s_uart_tx_dv <= '1';
 					end if;
@@ -271,11 +281,11 @@ begin
 		variable v_uart_rx_buffer_addr : integer;
 	begin
 		if(rst_n = '0') then
-			s_uart_rx_recv <= '0';
+			s_uart_rx_ready <= '0';
 			o_wb_data <= (others => '1');
 		elsif rising_edge(clk) then
 			if s_uart_rx_dv = '1' then
-				s_uart_rx_recv <= '1';
+				s_uart_rx_ready <= '1';
 			end if;
 		
 			if i_wb_stb = '1' and i_wb_we = '0' then
@@ -316,15 +326,20 @@ begin
 
 				-- UART RX ready
 				elsif i_wb_addr = ADDR_UART_RX_RDY then
-					o_wb_data(0) <= s_uart_rx_dv;
+					o_wb_data(0) <= s_uart_rx_ready;
+					o_wb_data(31 downto 1) <= (others => '0');
+					
+				-- UART TX ready
+				elsif i_wb_addr = ADDR_UART_TX_RDY then
+					o_wb_data(0) <= s_uart_tx_ready;
 					o_wb_data(31 downto 1) <= (others => '0');
 
 				-- UART RX
 				elsif i_wb_addr = ADDR_UART_RX then
-					if s_uart_rx_recv = '1' then
+					if s_uart_rx_ready = '1' then
 						o_wb_data(7 downto 0) <=  s_uart_rx_byte;
 						o_wb_data(31 downto 8) <= (others => '0');
-						s_uart_rx_recv <= '0';
+						s_uart_rx_ready <= '0';
 					else
 						o_wb_data(31 downto 0) <= (others => '1'); -- stall
 					end if;
@@ -362,7 +377,7 @@ begin
       end if;
    end process;
 
-	s_wb_stall <= s_uart_tx_active;
+	s_wb_stall <= '0';
 
 	o_wb_ack <= s_wb_ack and i_wb_stb;
 	o_wb_stall <= s_wb_stall;

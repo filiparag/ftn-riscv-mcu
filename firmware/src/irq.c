@@ -25,7 +25,7 @@ void __irq_init(void) {
   }
 }
 
-void __irq(const usize irqs) {
+void __isr(const usize irqs) {
   volatile usize j = 0;
   for (usize i = 0; i < IRQ_COUNT; ++i) {
     if (((1 << i) & irqs) && (irq_vector[i] != IRQ_UNSET)) {
