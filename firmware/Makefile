@@ -47,3 +47,20 @@ upload: build
 	@sudo rmmod ftdi_sio || true
 	@sudo rmmod usbserial || true
 	@jtagconfig
+
+intercept:
+	@sudo interceptty -l -v \
+		/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0 \
+		/dev/ttyINTRCPT | awk -f ./utils/interceptty.awk
+
+avrdude: build/${TARGET}.hex
+	# @avrdude \
+	# 	-v -p atmega328p -c arduino \
+	# 	-b 1000000 -D \
+	# 	-U eeprom:w:build/${TARGET}.hex \
+	# 	-P /dev/ttyINTRCPT
+	@avrdude \
+		-v -p atmega328p -c arduino \
+		-b 1000000 -D \
+		-U flash:w:dummy.hex \
+		-P /dev/ttyINTRCPT
