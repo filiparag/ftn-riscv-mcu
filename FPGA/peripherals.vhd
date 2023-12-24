@@ -159,8 +159,7 @@ begin
 
 	uart_rx : entity work.UART_RX
 		generic map (
-			--g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
-			g_CLKS_PER_BIT => 434 -- 115200
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 115_200 -- 115200 bps
 		)
 		port map (
 			i_Clk       => clk,
@@ -171,8 +170,7 @@ begin
 
 	uart_tx : entity work.UART_TX
 		generic map (
-			--g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
-			g_CLKS_PER_BIT => 434 -- 115200
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 115_200 -- 115200 bps
 		)
 		port map (
 			i_Clk       => clk,
@@ -186,8 +184,7 @@ begin
 	-- Debug UART
 	debug_tx : entity work.UART_TX
 		generic map (
-			--g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
-			g_CLKS_PER_BIT => 166667 -- 300
+			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 300 -- 300 bps
 		)
 		port map (
 			i_Clk       => clk,

@@ -63,5 +63,5 @@ avrdude: build/${TARGET}.hex
 	@avrdude \
 		-v -p ${AVRDUDE_PARTNO} -c ${AVRDUDE_PROG} \
 		-b ${BAUD_RATE} -D \
-		-U flash:w:build/${TARGET}.hex \
+		-U flash:w:build/${TARGET}.hex:i \
 		-P /dev/ttyINTRCPT

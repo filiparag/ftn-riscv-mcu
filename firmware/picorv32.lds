@@ -62,10 +62,10 @@ SECTIONS {
 		. = . + 0xFFC;
 		__mmap_end = . ;
 	} > bram
-	.prog 0xC000 : {
+	.sdram 0xC000 : {
 		. = ALIGN(4);
-		__prog_start = . ;
+		__sdram_start = . ;
 		. = . + 0xFFFFC;
-		__prog_end = . ;
-	}
+		__sdram_end = . ;
+	} > sdram
 }
