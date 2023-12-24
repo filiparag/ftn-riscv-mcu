@@ -6,10 +6,10 @@ void put_ch(const char character) {
   __uart_tx = character;
 }
 
-void get_ch(char *const character) {
+char get_ch(void) {
   while (!__uart_rx_ready)
     ;
-  *character = __uart_rx;
+  return __uart_rx;
 }
 
 void put_buff(const char *const buffer, const usize length) {
@@ -20,6 +20,18 @@ void put_buff(const char *const buffer, const usize length) {
 
 void get_buff(char *const buffer, const usize length) {
   for (usize i = 0; i < length; ++i) {
-    get_ch(&buffer[i]);
+    buffer[i] = get_ch();
+  }
+}
+
+void dbg_ch(const char character) {
+  while (!__debug_tx_ready)
+    ;
+  __debug_tx = character;
+}
+
+void dbg_buff(const char *const buffer, const usize length) {
+  for (usize i = 0; i < length; ++i) {
+    dbg_ch(buffer[i]);
   }
 }

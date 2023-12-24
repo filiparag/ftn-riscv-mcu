@@ -35,6 +35,8 @@ entity Peripherals is
 		-- UART
 		i_uart_rx : in std_logic;
 		o_uart_tx : out std_logic;
+		-- Debug UART
+		o_debug_tx : out std_logic;
 		-- External IRQ
 		i_eoi : in std_logic_vector(31 downto 0);
 		o_irq : out std_logic_vector(31 downto 0)
@@ -59,8 +61,14 @@ architecture Behavioral of Peripherals is
 	signal s_uart_tx_active : std_logic;
 	signal s_uart_tx_done : std_logic;
 	
+	signal s_debug_tx_byte : std_logic_vector(7 downto 0); -- debug
+	signal s_debug_tx_dv : std_logic; -- debug
+	signal s_debug_tx_active : std_logic; -- debug
+	signal s_debug_tx_done : std_logic; -- debug
+	
 	signal s_uart_rx_ready : std_logic;
 	signal s_uart_tx_ready : std_logic;
+	signal s_debug_tx_ready : std_logic; -- debug
 
 	signal s_btn_sw : std_logic_vector(12 downto 0);
 	signal s_btn_sw_changed : std_logic;
@@ -102,12 +110,16 @@ architecture Behavioral of Peripherals is
 	constant ADDR_UART_TX_RDY	: integer := 16#0034#;	--   8bit ro UART transmit ready
 	constant ADDR_UART_RX		: integer := 16#0038#;	--   8bit ro UART receive byte
 	constant ADDR_UART_TX		: integer := 16#003C#;	--	  8bit wo UART transmit byte
-
+	
 	-- LPRS1 board peripherals
 	constant ADDR_BTN_SW			: integer := 16#0040#;	--  13bit ro	Buttons and switches
 	constant ADDR_7SEGM_HEX		: integer := 16#0044#;	--  16bit rw	7segm hex
 	constant ADDR_7SEGM			: integer := 16#0048#;	--  32bit rw	7segm custom
 	constant ADDR_DISP			: integer := 16#004C#;	-- 192bit rw	LED matrix framebuffer
+
+	-- Debug UART
+	constant ADDR_DEBUG_TX_RDY	: integer := 16#0200#;	--   8bit ro Debug transmit ready
+	constant ADDR_DEBUG_TX		: integer := 16#0204#;	--	  8bit wo Debug transmit byte
 	
 	-------------------------------
 	-- Interrupt register bitmap --
@@ -147,7 +159,8 @@ begin
 
 	uart_rx : entity work.UART_RX
 		generic map (
-			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
+			--g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
+			g_CLKS_PER_BIT => 434 -- 115200
 		)
 		port map (
 			i_Clk       => clk,
@@ -158,7 +171,8 @@ begin
 
 	uart_tx : entity work.UART_TX
 		generic map (
-			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
+			--g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
+			g_CLKS_PER_BIT => 434 -- 115200
 		)
 		port map (
 			i_Clk       => clk,
@@ -167,6 +181,21 @@ begin
 			o_TX_Active => s_uart_tx_active,
 			o_TX_Serial => o_uart_tx,
 			o_TX_Done   => s_uart_tx_done
+		);
+		
+	-- Debug UART
+	debug_tx : entity work.UART_TX
+		generic map (
+			--g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 1_000_000 -- 1Mbps
+			g_CLKS_PER_BIT => 166667 -- 300
+		)
+		port map (
+			i_Clk       => clk,
+			i_TX_DV     => s_debug_tx_dv,
+			i_TX_Byte   => s_debug_tx_byte,
+			o_TX_Active => s_debug_tx_active,
+			o_TX_Serial => o_debug_tx,
+			o_TX_Done   => s_debug_tx_done
 		);
 
 	lprs1_board_gpio : entity work.LPRS1_Board_GPIO
@@ -209,6 +238,7 @@ begin
 	------------------
 
 	s_uart_tx_ready <= not s_uart_tx_active and not s_uart_tx_dv;
+	s_debug_tx_ready <= not s_debug_tx_active and not s_debug_tx_dv; -- debug
 	
 	wb_write : process(clk, rst_n)
 	begin
@@ -222,6 +252,9 @@ begin
 			s_uart_tx_byte <= (others => '0');
 			s_uart_tx_dv <= '0';
 			
+			s_debug_tx_byte <= (others => '0'); -- debug
+			s_debug_tx_dv <= '0'; -- debug
+			
 			s_timer_rst <= (others => '1');
 			s_timer_sel <= (others => '0');
 			s_timer_int <= (others => '1');
@@ -229,6 +262,7 @@ begin
 		elsif rising_edge(clk) then
 			if i_wb_stb = '1' and i_wb_we = '1' then
 				s_uart_tx_dv <= '0';
+				s_debug_tx_dv <= '0'; -- debug
 				
 				-- LED
 				if i_wb_addr = ADDR_LED then
@@ -258,6 +292,13 @@ begin
 					if s_uart_tx_active = '0' and s_uart_tx_dv = '0' then
 						s_uart_tx_byte <= i_wb_data(7 downto 0);
 						s_uart_tx_dv <= '1';
+					end if;
+					
+				-- Debug UART TX
+				elsif i_wb_addr = ADDR_DEBUG_TX then
+					if s_debug_tx_active = '0' and s_debug_tx_dv = '0' then
+						s_debug_tx_byte <= i_wb_data(7 downto 0);
+						s_debug_tx_dv <= '1';
 					end if;
 
 				-- Timer reset
@@ -332,6 +373,11 @@ begin
 				-- UART TX ready
 				elsif i_wb_addr = ADDR_UART_TX_RDY then
 					o_wb_data(0) <= s_uart_tx_ready;
+					o_wb_data(31 downto 1) <= (others => '0');
+					
+				-- Debug UART TX ready
+				elsif i_wb_addr = ADDR_DEBUG_TX_RDY then
+					o_wb_data(0) <= s_debug_tx_ready;
 					o_wb_data(31 downto 1) <= (others => '0');
 
 				-- UART RX

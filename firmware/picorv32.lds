@@ -1,3 +1,5 @@
+/* https://users.informatik.haw-hamburg.de/~krabat/FH-Labor/gnupro/5_GNUPro_Utilities/c_Using_LD/ldLinker_scripts.html */
+
 BRAM_SIZE = 0xC000;
 SDRAM_SIZE = 0x100000;
 
@@ -55,7 +57,15 @@ SECTIONS {
 		__gpio_7segm_hex = . + 0x044;
 		__gpio_7segm = . + 0x0048;
 		__gpio_disp = . + 0x004c;
+		__debug_tx_ready = . + 0x0200;
+		__debug_tx = . + 0x0204;
 		. = . + 0xFFC;
 		__mmap_end = . ;
 	} > bram
+	.prog 0xC000 : {
+		. = ALIGN(4);
+		__prog_start = . ;
+		. = . + 0xFFFFC;
+		__prog_end = . ;
+	}
 }

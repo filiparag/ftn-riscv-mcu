@@ -21,6 +21,7 @@ module system (
 
 	input i_uart_rx,
 	output o_uart_tx,
+	output o_debug_tx,
 
 	// SDRAM
 	output				o_ram_clk,
@@ -381,6 +382,7 @@ module system (
 		.i_pb (i_pb),
 		.i_uart_rx (i_uart_rx),
 		.o_uart_tx (o_uart_tx),
+		.o_debug_tx (o_debug_tx),
 		.o_irq (s_irq),
 		.i_eoi (s_eoi)
 	);

@@ -9,7 +9,7 @@ DMA_LOADER	?= ../software/max1000_riscv_loader/build/max1000_riscv_loader
 TARGET		?= lprs_cpu_bootloader
 AVRDUDE_PARTNO	?= atmega328p
 AVRDUDE_PROG	?= arduino
-BAUD_RATE	?= 1000000
+BAUD_RATE	?= 115200
 
 clean:
 	@find build -type f -not -name '.gitignore' -exec rm {} \;

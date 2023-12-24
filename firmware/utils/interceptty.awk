@@ -123,13 +123,13 @@ $2 == "0x81" {
 $2 == "0x82" {
     printf("\033[0;35mSTK_SW_MINOR\033[0m")
 }
-$2 == "0x1E" {
+$2 == "0x1e" {
     printf("\033[0;35mSIGNATURE_0\033[0m")
 }
 $2 == "0x95" {
     printf("\033[0;35mSIGNATURE_1\033[0m")
 }
-$2 == "0x0F" {
+$2 == "0x0f" {
     printf("\033[0;35mSIGNATURE_2\033[0m")
 }
 $2 == "0x4d" {
