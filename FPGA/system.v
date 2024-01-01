@@ -64,6 +64,7 @@ module system (
 	wire 			s_wbm_stb_o;
 	wire 			s_wbm_ack_i;
 	wire 			s_wbm_cyc_o;
+	
 	// Wishbone BRAM
 	wire			s_wb_bram_cyc;
 	wire			s_wb_bram_stb;
@@ -75,6 +76,7 @@ module system (
 	wire			s_wb_bram_stall;
 	wire			s_wb_bram_ack;
 	wire [31:0]	s_wb_bram_data_o;
+	
 	// Wishbone SDRAM
 	wire			s_wb_sdram_cyc;
 	wire			s_wb_sdram_stb;
@@ -85,6 +87,7 @@ module system (
 	wire			s_wb_sdram_stall;
 	wire			s_wb_sdram_ack;
 	wire [31:0]	s_wb_sdram_data_o;
+	
 	//  Wishbone MM REG
 	wire		s_wb_periph_cyc;
 	wire		s_wb_periph_stb;
@@ -95,6 +98,18 @@ module system (
 	wire		s_wb_periph_stall;
 	wire		s_wb_periph_ack;
 	wire [31:0]	s_wb_periph_data_o;
+	
+	//  Wishbone ROM
+	wire		s_wb_rom_cyc;
+	wire		s_wb_rom_stb;
+	wire		s_wb_rom_we;
+	wire [31:0] s_wb_rom_addr;
+	wire [31:0] s_wb_rom_data_i;
+	wire [3:0] 	s_wb_rom_sel;
+	wire		s_wb_rom_stall;
+	wire		s_wb_rom_ack;
+	wire [31:0]	s_wb_rom_data_o;
+	
 	// SDRAM control signals
 	wire s_o_ram_cs_n;
 	wire s_o_ram_cke;
@@ -269,7 +284,17 @@ module system (
 		.o_wb_periph_sel	(s_wb_periph_sel	),
 		.i_wb_periph_stall	(s_wb_periph_stall	),
 		.i_wb_periph_ack	(s_wb_periph_ack	),
-		.i_wb_periph_data	(s_wb_periph_data_i)
+		.i_wb_periph_data	(s_wb_periph_data_i),
+	 // ROM
+	   .o_wb_rom_cyc	(s_wb_rom_cyc	),
+		.o_wb_rom_stb	(s_wb_rom_stb	),
+		.o_wb_rom_we		(s_wb_rom_we	),
+		.o_wb_rom_addr	(s_wb_rom_addr),
+		.o_wb_rom_data	(s_wb_rom_data_o),
+		.o_wb_rom_sel	(s_wb_rom_sel	),
+		.i_wb_rom_stall	(s_wb_rom_stall	),
+		.i_wb_rom_ack	(s_wb_rom_ack	),
+		.i_wb_rom_data	(s_wb_rom_data_i)
    );
 
 	memory bram (
@@ -385,6 +410,21 @@ module system (
 		.o_debug_tx (o_debug_tx),
 		.o_irq (s_irq),
 		.i_eoi (s_eoi)
+	);
+
+	ROM rom (
+		.clk       (s_sys_clk    			),
+		.rst_n      (n_rst        	),
+		.i_wb_cyc	 (s_wb_rom_cyc	),
+		.i_wb_stb	 (s_wb_rom_stb	),
+		.i_wb_we	 	 (s_wb_rom_we		),
+		.i_wb_addr	 (s_wb_rom_addr	),
+		.i_wb_data	 (s_wb_rom_data_o	),
+		.i_wb_sel	 (s_wb_rom_sel	),
+		.o_wb_stall  (s_wb_rom_stall  ),
+		.o_wb_ack	 (s_wb_rom_ack	),
+		.o_wb_data	 (s_wb_rom_data_i	),
+		//.o_led (o_led) // debug
 	);
 
 	RST_Reg rstreg (
