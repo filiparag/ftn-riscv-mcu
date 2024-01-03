@@ -2,7 +2,7 @@
 
 //`define HOLD								// Hold or DBG registers
 
-module system (
+module top (
 	input   	i_clk,
 	input		i_rst,
 
@@ -205,8 +205,8 @@ module system (
 		.ENABLE_PCPI(0),
 		.ENABLE_MUL(1),
 		.ENABLE_FAST_MUL(1),
-		//.ENABLE_DIV(1),
-		//.BARREL_SHIFTER(1),
+		.ENABLE_DIV(1),
+		.BARREL_SHIFTER(1),
 		.REGS_INIT_ZERO(1),
 		.PROGADDR_RESET(16'h 0000_0000),
 		.STACKADDR(16'h 0000_7ffc),
