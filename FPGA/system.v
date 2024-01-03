@@ -64,7 +64,7 @@ module system (
 	wire 			s_wbm_stb_o;
 	wire 			s_wbm_ack_i;
 	wire 			s_wbm_cyc_o;
-	
+
 	// Wishbone BRAM
 	wire			s_wb_bram_cyc;
 	wire			s_wb_bram_stb;
@@ -76,7 +76,7 @@ module system (
 	wire			s_wb_bram_stall;
 	wire			s_wb_bram_ack;
 	wire [31:0]	s_wb_bram_data_o;
-	
+
 	// Wishbone SDRAM
 	wire			s_wb_sdram_cyc;
 	wire			s_wb_sdram_stb;
@@ -87,7 +87,7 @@ module system (
 	wire			s_wb_sdram_stall;
 	wire			s_wb_sdram_ack;
 	wire [31:0]	s_wb_sdram_data_o;
-	
+
 	//  Wishbone MM REG
 	wire		s_wb_periph_cyc;
 	wire		s_wb_periph_stb;
@@ -98,7 +98,7 @@ module system (
 	wire		s_wb_periph_stall;
 	wire		s_wb_periph_ack;
 	wire [31:0]	s_wb_periph_data_o;
-	
+
 	//  Wishbone ROM
 	wire		s_wb_rom_cyc;
 	wire		s_wb_rom_stb;
@@ -109,7 +109,7 @@ module system (
 	wire		s_wb_rom_stall;
 	wire		s_wb_rom_ack;
 	wire [31:0]	s_wb_rom_data_o;
-	
+
 	// SDRAM control signals
 	wire s_o_ram_cs_n;
 	wire s_o_ram_cke;
@@ -205,8 +205,8 @@ module system (
 		.ENABLE_PCPI(0),
 		.ENABLE_MUL(1),
 		.ENABLE_FAST_MUL(1),
-		.ENABLE_DIV(1),
-		.BARREL_SHIFTER(1),
+		//.ENABLE_DIV(1),
+		//.BARREL_SHIFTER(1),
 		.REGS_INIT_ZERO(1),
 		.PROGADDR_RESET(16'h 0000_0000),
 		.STACKADDR(16'h 0000_7ffc),
@@ -427,15 +427,17 @@ module system (
 		//.o_led (o_led) // debug
 	);
 
-	RST_Reg rstreg (
-		.i_Clk       (s_sys_clk    ),
-		.i_Rstn 		 (n_rst       ),
-		.i_WE 		 (o_dma_mem_we	),
-		.i_Address	 (o_dma_address),
-		.i_Data	 	 (o_dma_data	),
-		.o_Data		 (rst_proc		)
+//	RST_Reg rstreg (
+//		.i_Clk       (s_sys_clk    ),
+//		.i_Rstn 		 (n_rst       ),
+//		.i_WE 		 (o_dma_mem_we	),
+//		.i_Address	 (o_dma_address),
+//		.i_Data	 	 (o_dma_data	),
+//		.o_Data		 (rst_proc		)
+//
+//	);
 
-	);
+	assign rst_proc = ~n_rst;
 
 
 endmodule

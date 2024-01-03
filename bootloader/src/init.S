@@ -3,8 +3,10 @@
 .section .init
 .global __reset
 .global __init
+.global __start
 .type __reset @function
 .type __init @function
+.type __start @function
 
 __reset:
 
@@ -76,3 +78,10 @@ __init:
     j       main
 
     ebreak
+
+__start:
+
+	lui     t1, %hi(__sdram_start)
+	addi    t1, t1, %lo(__sdram_start)
+
+	jal		t1, 0

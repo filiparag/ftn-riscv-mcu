@@ -46,26 +46,26 @@ end Peripherals;
 architecture Behavioral of Peripherals is
 
 	signal s_led : std_logic_vector(7 downto 0);
-	
+
 	signal s_7segm : std_logic_vector(32 downto 0);
 	signal s_7segm_fb : std_logic_vector(31 downto 0);
-	
+
 	signal s_disp_data : std_logic_vector(31 downto 0);
 	signal s_disp_pos : std_logic_vector(31 downto 0);
 
 	signal s_uart_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_rx_dv : std_logic;
-	
+
 	signal s_uart_tx_byte : std_logic_vector(7 downto 0);
 	signal s_uart_tx_dv : std_logic;
 	signal s_uart_tx_active : std_logic;
 	signal s_uart_tx_done : std_logic;
-	
+
 	signal s_debug_tx_byte : std_logic_vector(7 downto 0); -- debug
 	signal s_debug_tx_dv : std_logic; -- debug
 	signal s_debug_tx_active : std_logic; -- debug
 	signal s_debug_tx_done : std_logic; -- debug
-	
+
 	signal s_uart_rx_ready : std_logic;
 	signal s_uart_tx_ready : std_logic;
 	signal s_debug_tx_ready : std_logic; -- debug
@@ -110,7 +110,7 @@ architecture Behavioral of Peripherals is
 	constant ADDR_UART_TX_RDY	: integer := 16#0034#;	--   8bit ro UART transmit ready
 	constant ADDR_UART_RX		: integer := 16#0038#;	--   8bit ro UART receive byte
 	constant ADDR_UART_TX		: integer := 16#003C#;	--	  8bit wo UART transmit byte
-	
+
 	-- LPRS1 board peripherals
 	constant ADDR_BTN_SW			: integer := 16#0040#;	--  13bit ro	Buttons and switches
 	constant ADDR_7SEGM_HEX		: integer := 16#0044#;	--  16bit rw	7segm hex
@@ -120,7 +120,7 @@ architecture Behavioral of Peripherals is
 	-- Debug UART
 	constant ADDR_DEBUG_TX_RDY	: integer := 16#0200#;	--   8bit ro Debug transmit ready
 	constant ADDR_DEBUG_TX		: integer := 16#0204#;	--	  8bit wo Debug transmit byte
-	
+
 	-------------------------------
 	-- Interrupt register bitmap --
 	-------------------------------
@@ -180,7 +180,7 @@ begin
 			o_TX_Serial => o_uart_tx,
 			o_TX_Done   => s_uart_tx_done
 		);
-		
+
 	-- Debug UART
 	debug_tx : entity work.UART_TX
 		generic map (
@@ -217,7 +217,7 @@ begin
 		);
 
 	o_led <= s_led;
-	
+
 	o_sem(1) <= s_uart_rx_ready;
 	o_sem(0) <= s_uart_tx_ready;
 
@@ -229,38 +229,38 @@ begin
 	s_irq(4) <= s_uart_rx_dv;
 	s_irq(5) <= s_uart_tx_done;
 	o_irq <= s_irq;
-	
+
 	------------------
 	-- Wishbone bus --
 	------------------
 
 	s_uart_tx_ready <= not s_uart_tx_active and not s_uart_tx_dv;
 	s_debug_tx_ready <= not s_debug_tx_active and not s_debug_tx_dv; -- debug
-	
+
 	wb_write : process(clk, rst_n)
 	begin
 		if(rst_n = '0') then
-			
+
 			s_led <= (others => '0');
 			s_7segm <= "100001110011001110000010101011011"; -- LPrS
 			s_disp_data <= (others => '0');
 			s_disp_pos <= (others => '0');
-			
+
 			s_uart_tx_byte <= (others => '0');
 			s_uart_tx_dv <= '0';
-			
+
 			s_debug_tx_byte <= (others => '0'); -- debug
 			s_debug_tx_dv <= '0'; -- debug
-			
+
 			s_timer_rst <= (others => '1');
 			s_timer_sel <= (others => '0');
 			s_timer_int <= (others => '1');
-			
+
 		elsif rising_edge(clk) then
 			if i_wb_stb = '1' and i_wb_we = '1' then
 				s_uart_tx_dv <= '0';
 				s_debug_tx_dv <= '0'; -- debug
-				
+
 				-- LED
 				if i_wb_addr = ADDR_LED then
 					s_led <= (i_wb_data(7 downto 0) and s_wb_sel_mask(7 downto 0)) or
@@ -277,7 +277,7 @@ begin
 					s_7segm(32) <= '1';
 					s_7segm(31 downto 0)	<= (i_wb_data and s_wb_sel_mask) or
 													(s_7segm(31 downto 0) and not s_wb_sel_mask);
-													
+
 				-- LED matrix
 				elsif i_wb_addr >= ADDR_DISP and i_wb_addr < ADDR_DISP + 256 then
 					s_disp_data <= (i_wb_data and s_wb_sel_mask) or
@@ -290,7 +290,7 @@ begin
 						s_uart_tx_byte <= i_wb_data(7 downto 0);
 						s_uart_tx_dv <= '1';
 					end if;
-					
+
 				-- Debug UART TX
 				elsif i_wb_addr = ADDR_DEBUG_TX then
 					if s_debug_tx_active = '0' and s_debug_tx_dv = '0' then
@@ -309,7 +309,7 @@ begin
 				-- Timer interval
 				elsif i_wb_addr = ADDR_TIMER_INT then
 					s_timer_int <= i_wb_data and s_wb_sel_mask;
-					
+
 				end if;
 			end if;
 		end if;
@@ -325,9 +325,9 @@ begin
 			if s_uart_rx_dv = '1' then
 				s_uart_rx_ready <= '1';
 			end if;
-		
+
 			if i_wb_stb = '1' and i_wb_we = '0' then
-				
+
 				 -- LED
 				if i_wb_addr = ADDR_LED then
 					o_wb_data(7 downto 0) <= s_led;
@@ -366,12 +366,12 @@ begin
 				elsif i_wb_addr = ADDR_UART_RX_RDY then
 					o_wb_data(0) <= s_uart_rx_ready;
 					o_wb_data(31 downto 1) <= (others => '0');
-					
+
 				-- UART TX ready
 				elsif i_wb_addr = ADDR_UART_TX_RDY then
 					o_wb_data(0) <= s_uart_tx_ready;
 					o_wb_data(31 downto 1) <= (others => '0');
-					
+
 				-- Debug UART TX ready
 				elsif i_wb_addr = ADDR_DEBUG_TX_RDY then
 					o_wb_data(0) <= s_debug_tx_ready;

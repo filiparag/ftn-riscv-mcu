@@ -294,7 +294,6 @@ set_global_assignment -name VERILOG_FILE system.v
 set_global_assignment -name VHDL_FILE uart_rx.vhd
 set_global_assignment -name VHDL_FILE uart_tx.vhd
 set_global_assignment -name VHDL_FILE uart_bridge.vhd
-set_global_assignment -name VHDL_FILE DMA_FSM_tb.vhd
 set_global_assignment -name VHDL_FILE DBG_CNT.vhd
 set_global_assignment -name VHDL_FILE WB_slave_arbiter.vhd
 set_global_assignment -name VERILOG_FILE wbsdram.v

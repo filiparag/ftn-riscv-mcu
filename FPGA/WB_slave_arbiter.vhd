@@ -60,159 +60,72 @@ end entity;
 
 architecture rtl of wb_slave_arbiter is
 	
-	signal s_select_output : std_logic_vector(1 downto 0);
+	type t_slave is (BROM, BRAM, SDRAM, MMAP, SEGFAULT);
+	signal s_slave : t_slave;
 	
 begin
 
-	-- BROM			0x000000 - 0x000FFF ( 2KiB)
+	-- BROM			0x000000 - 0x000FFF ( 4KiB)
 	-- BRAM			0x001000 - 0x00BFFF (20KiB)
 	-- Peripherals	0x008000 - 0x00BFFF (16KiB)
 	-- SDRAM 		0x00C000 - 0x10BFFF ( 1MiB)
 
-	s_select_output <= "00" when i_wb_addr <= 16#0FFF# else		-- BROM
-							 "01" when i_wb_addr <= 16#7FFF# else		-- BRAM
-							 "10" when i_wb_addr <= 16#BFFF# else		-- Peripherals
-							 "11"; -- SDRAM
-	process(s_select_output, 
-	i_wb_cyc, i_wb_stb, i_wb_we, i_wb_addr, i_wb_data, i_wb_sel, 
-	i_wb_bram_stall, i_wb_bram_ack, i_wb_bram_data, 
-	i_wb_sdram_stall, i_wb_sdram_ack, i_wb_sdram_data,
-	i_wb_periph_stall, i_wb_periph_ack, i_wb_periph_data,
-	i_wb_rom_stall, i_wb_rom_ack, i_wb_rom_data)
-	begin
-		if(s_select_output = "01") then	-- BRAM selected
-			--	BRAM
-			o_wb_bram_cyc	<= i_wb_cyc;
-			o_wb_bram_stb	<= i_wb_stb;
-			o_wb_bram_we	<= i_wb_we;
-			o_wb_bram_addr	<= i_wb_addr - 16#1000#;
-			o_wb_bram_data	<= i_wb_data;
-			o_wb_bram_sel	<= i_wb_sel;
-			-- Slave 2 master outputs
-			o_wb_stall		<= i_wb_bram_stall;
-			o_wb_ack			<= i_wb_bram_ack;
-			o_wb_data		<= i_wb_bram_data;
-			--	SDRAM
-			o_wb_sdram_cyc	<= '0';				-- should this be high Z?
-			o_wb_sdram_stb	<= '0';
-			o_wb_sdram_we	<= '0';
-			o_wb_sdram_addr <= (others => '0');
-			o_wb_sdram_data <= (others => '0');
-			o_wb_sdram_sel	<= (others => '0');
-			-- MM REG
-			o_wb_periph_cyc	<= '0';				
-			o_wb_periph_stb	<= '0';
-			o_wb_periph_we	<= '0';
-			o_wb_periph_addr <= (others => '0');
-			o_wb_periph_data <= (others => '0');
-			o_wb_periph_sel  <= (others => '0');
-			-- BROM
-			o_wb_rom_cyc	<= '0';				
-			o_wb_rom_stb	<= '0';
-			o_wb_rom_we		<= '0';
-			o_wb_rom_addr <= (others => '0');
-			o_wb_rom_data <= (others => '0');
-			o_wb_rom_sel  <= (others => '0');
-		elsif(s_select_output = "11") then	-- SDRAM selected
-			--	BRAM
-			o_wb_bram_cyc	<= '0';
-			o_wb_bram_stb	<= '0';
-			o_wb_bram_we	<= '0';
-			o_wb_bram_addr	<= (others => '0');
-			o_wb_bram_data	<= (others => '0');
-			o_wb_bram_sel	<= (others => '0');
-			-- Slave 2 master outputs
-			o_wb_stall		<= i_wb_sdram_stall;
-			o_wb_ack			<= i_wb_sdram_ack;
-			o_wb_data		<= i_wb_sdram_data;
-			--	SDRAM
-			o_wb_sdram_cyc	<= i_wb_cyc;				-- should this be high Z?
-			o_wb_sdram_stb	<= i_wb_stb;
-			o_wb_sdram_we	<= i_wb_we;
-			o_wb_sdram_addr <= i_wb_addr(20 downto 0);
-			o_wb_sdram_data <= i_wb_data;
-			o_wb_sdram_sel	<= i_wb_sel;
-			-- MM REG
-			o_wb_periph_cyc	<= '0';				
-			o_wb_periph_stb	<= '0';
-			o_wb_periph_we	<= '0';
-			o_wb_periph_addr <= (others => '0');
-			o_wb_periph_data <= (others => '0');
-			o_wb_periph_sel  <= (others => '0');
-			-- BROM
-			o_wb_rom_cyc	<= '0';				
-			o_wb_rom_stb	<= '0';
-			o_wb_rom_we		<= '0';
-			o_wb_rom_addr <= (others => '0');
-			o_wb_rom_data <= (others => '0');
-			o_wb_rom_sel  <= (others => '0');
-		elsif(s_select_output = "10") then	-- MM REG selected
-			--	BRAM
-			o_wb_bram_cyc	<= '0';
-			o_wb_bram_stb	<= '0';
-			o_wb_bram_we	<= '0';
-			o_wb_bram_addr	<= (others => '0');
-			o_wb_bram_data	<= (others => '0');
-			o_wb_bram_sel	<= (others => '0');
-			-- Slave 2 master outputs
-			o_wb_stall		<= i_wb_periph_stall;
-			o_wb_ack			<= i_wb_periph_ack;
-			o_wb_data		<= i_wb_periph_data;
-			--	SDRAM
-			o_wb_sdram_cyc	<= '0';				-- should this be high Z?
-			o_wb_sdram_stb	<= '0';
-			o_wb_sdram_we	<= '0';
-			o_wb_sdram_addr <= (others => '0');
-			o_wb_sdram_data <= (others => '0');
-			o_wb_sdram_sel	<= (others => '0');
-			-- MM REG
-			o_wb_periph_cyc	<= i_wb_cyc;				
-			o_wb_periph_stb	<= i_wb_stb;
-			o_wb_periph_we		<= i_wb_we;
-			o_wb_periph_addr <= i_wb_addr - 16#8000#;
-			o_wb_periph_data <= i_wb_data;
-			o_wb_periph_sel  <= i_wb_sel;
-			-- BROM
-			o_wb_rom_cyc	<= '0';				
-			o_wb_rom_stb	<= '0';
-			o_wb_rom_we		<= '0';
-			o_wb_rom_addr <= (others => '0');
-			o_wb_rom_data <= (others => '0');
-			o_wb_rom_sel  <= (others => '0');
-		else -- BROM selected
-			-- BRAM
-			o_wb_bram_cyc	<= '0';
-			o_wb_bram_stb	<= '0';
-			o_wb_bram_we	<= '0';
-			o_wb_bram_addr	<= (others => '0');
-			o_wb_bram_data	<= (others => '0');
-			o_wb_bram_sel	<= (others => '0'); 
-			-- Slave 2 master outputs
-			o_wb_stall		<= i_wb_bram_stall;
-			o_wb_ack			<= i_wb_bram_ack;
-			o_wb_data		<= i_wb_bram_data;
-			--	SDRAM
-			o_wb_sdram_cyc	<= '0';				-- should this be high Z?
-			o_wb_sdram_stb	<= '0';
-			o_wb_sdram_we	<= '0';
-			o_wb_sdram_addr <= (others => '0');
-			o_wb_sdram_data <= (others => '0');
-			o_wb_sdram_sel	<= (others => '0');
-			-- MM REG
-			o_wb_periph_cyc	<= '0';				
-			o_wb_periph_stb	<= '0';
-			o_wb_periph_we		<= '0';
-			o_wb_periph_addr <= (others => '0');
-			o_wb_periph_data <= (others => '0');
-			o_wb_periph_sel  <= (others => '0');
-			-- BROM
-			o_wb_rom_cyc	<= i_wb_cyc;
-			o_wb_rom_stb	<= i_wb_stb;
-			o_wb_rom_we		<= i_wb_we;
-			o_wb_rom_addr	<= i_wb_addr;
-			o_wb_rom_data	<= i_wb_data;
-			o_wb_rom_sel	<= i_wb_sel;
-		end if;
-	end process;
+	s_slave <= BROM when i_wb_addr < 16#1000# else
+				  BRAM when i_wb_addr < 16#8000# else
+				  MMAP when i_wb_addr < 16#C000# else
+				  SDRAM when i_wb_addr < 16#10C000# else
+				  --BROM when i_wb_addr < 16#200000# else -- debug
+				  SEGFAULT;
+
+	-- Slave to Master outputs
+	o_wb_stall <= i_wb_rom_stall when s_slave = BROM else
+					  i_wb_bram_stall when s_slave = BRAM else
+					  i_wb_periph_stall when s_slave = MMAP else
+					  i_wb_sdram_stall when s_slave = SDRAM else
+					  '0';
+	o_wb_ack <= i_wb_rom_ack when s_slave = BROM else
+					i_wb_bram_ack when s_slave = BRAM else
+					i_wb_periph_ack when s_slave = MMAP else
+					i_wb_sdram_ack when s_slave = SDRAM else
+					'0';
+	o_wb_data <= i_wb_rom_data when s_slave = BROM else
+					 i_wb_bram_data when s_slave = BRAM else
+					 i_wb_periph_data when s_slave = MMAP else
+					 i_wb_sdram_data when s_slave = SDRAM else
+					 (others => '0');
+	
+	-- BROM
+	o_wb_rom_cyc <= i_wb_cyc when s_slave = BROM else '0';
+	o_wb_rom_stb <= i_wb_stb when s_slave = BROM else '0';
+	o_wb_rom_we <= i_wb_we when s_slave = BROM else '0';
+	--o_wb_rom_addr <= i_wb_addr - 16#10C000# when s_slave = BROM else (others => '0'); -- debug
+	o_wb_rom_addr <= i_wb_addr when s_slave = BROM else (others => '0');
+	o_wb_rom_data <= i_wb_data when s_slave = BROM else (others => '0');
+	o_wb_rom_sel <= i_wb_sel when s_slave = BROM else (others => '0');
+    
+	-- BRAM
+	o_wb_bram_cyc <= i_wb_cyc when s_slave = BRAM else '0';
+	o_wb_bram_stb <= i_wb_stb when s_slave = BRAM else '0';
+	o_wb_bram_we <= i_wb_we when s_slave = BRAM else '0';
+	--o_wb_bram_addr <= i_wb_addr when s_slave = BRAM else (others => '0'); -- debug
+	o_wb_bram_addr <= i_wb_addr - 16#1000# when s_slave = BRAM else (others => '0');
+	o_wb_bram_data <= i_wb_data when s_slave = BRAM else (others => '0');
+	o_wb_bram_sel <= i_wb_sel when s_slave = BRAM else (others => '0');
+
+	-- MMAP Peripherals
+	o_wb_periph_cyc <= i_wb_cyc when s_slave = MMAP else '0';
+	o_wb_periph_stb <= i_wb_stb when s_slave = MMAP else '0';
+	o_wb_periph_we <= i_wb_we when s_slave = MMAP else '0';
+	o_wb_periph_addr <= i_wb_addr - 16#8000# when s_slave = MMAP else (others => '0');
+	o_wb_periph_data <= i_wb_data when s_slave = MMAP else (others => '0');
+	o_wb_periph_sel <= i_wb_sel when s_slave = MMAP else (others => '0');
+
+	-- SDRAM
+	o_wb_sdram_cyc <= i_wb_cyc when s_slave = SDRAM else '0';
+	o_wb_sdram_stb <= i_wb_stb when s_slave = SDRAM else '0';
+	o_wb_sdram_we <= i_wb_we when s_slave = SDRAM else '0';
+	o_wb_sdram_addr <= i_wb_addr(20 downto 0) when s_slave = SDRAM else (others => '0');
+	o_wb_sdram_data <= i_wb_data when s_slave = SDRAM else (others => '0');
+	o_wb_sdram_sel <= i_wb_sel when s_slave = SDRAM else (others => '0');
 
 end architecture;
