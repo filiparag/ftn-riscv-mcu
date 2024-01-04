@@ -1,14 +1,16 @@
 
+#include "../include/memory.h"
 #include "../include/optiboot.h"
 
-extern volatile u32 __gpio_7segm;
-extern void __start(void);
+extern void __exit(void);
 
 int main(void) {
   for (;;) {
+    init_ram();
     __gpio_7segm = 0b00011111011111100111111000001111;
     optiboot();
-    __start();
+    __gpio_7segm = 0;
+    __exit();
   }
   return 0;
 }

@@ -1,4 +1,5 @@
 #include "../include/optiboot.h"
+#include "../include/memory.h"
 
 void put_ch(const char character) {
   while (!__uart_tx_ready)
@@ -48,13 +49,6 @@ void get_n_ch(const usize count) {
   verify_space();
 }
 
-void init_sdram(void) {
-  volatile usize *sdram = (usize *)&__sdram_start;
-  for (; sdram < &__sdram_end; ++sdram) {
-    *sdram = 0;
-  }
-}
-
 void stk_get_parameter(void) {
   unsigned char which = get_ch();
   verify_space();
@@ -85,11 +79,11 @@ void stk_univeral(void) {
 void stk_prog_page(const u16 address) {
   u8 length = get_length();
   get_ch(); // desttype
-  volatile usize *const sdram = (usize *)&__sdram_start;
+  volatile usize *const bram = (usize *)&__fw_start;
   const usize page_start = address << 1;
   for (usize byte = 0; byte < length; ++byte) {
     const usize offset = page_start + byte;
-    *(sdram + offset) = get_ch();
+    *(bram + offset) = get_ch();
   }
   verify_space();
 }
@@ -98,11 +92,11 @@ void stk_read_page(const u16 address) {
   u8 length = get_length();
   get_ch(); // desttype
   verify_space();
-  const volatile usize *const sdram = (usize *)&__sdram_start;
+  const volatile usize *const bram = (usize *)&__fw_start;
   const usize page_start = address << 1;
   for (usize byte = 0; byte < length; ++byte) {
     const usize offset = page_start + byte;
-    put_ch(*(sdram + offset));
+    put_ch(*(bram + offset));
   }
 }
 
@@ -114,7 +108,6 @@ void stk_read_sign(void) {
 }
 
 void optiboot(void) {
-  init_sdram();
   flash_led();
   u16 address;
   for (;;) {

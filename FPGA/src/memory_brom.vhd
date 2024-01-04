@@ -10,7 +10,7 @@ USE altera_mf.altera_mf_components.all;
 
 entity MEM_BROM is
 	generic (
-		g_ROM_SIZE : positive := 1024
+		g_ROM_SIZE : positive := 1024 -- 4KiB
 	);
 	port (
 		clk : in std_logic;

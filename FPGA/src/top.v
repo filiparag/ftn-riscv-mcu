@@ -203,12 +203,12 @@ module top (
 		.ENABLE_DIV(1),
 		.BARREL_SHIFTER(1),
 		.REGS_INIT_ZERO(1),
-		.PROGADDR_RESET(16'h 0000_0000),
-		.STACKADDR(16'h 0000_7ffc),
+		.PROGADDR_RESET(32'h 0001_0000), // BROM
+		.STACKADDR(32'h 0000_bffc), // BRAM
 		.ENABLE_IRQ(1),
-		.MASKED_IRQ(32'h 0000_0000),
-		.LATCHED_IRQ(32'h ffff_ffff),
-		.PROGADDR_IRQ(16'h 0000_060)
+		.MASKED_IRQ(32'h 0000_0000), // Enable all
+		.LATCHED_IRQ(32'h ffff_ffff), // Latch all
+		.PROGADDR_IRQ(32'h 0001_0060) // BROM
 	) picorv32(
 		.wb_rst_i	(rst_proc	),
 		.wb_clk_i	(s_sys_clk	),

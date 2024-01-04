@@ -1,12 +1,16 @@
 #include "../include/picorv32.h"
 
 .section .init
+
 .global __reset
+.global __irq_handler
 .global __init
-.global __start
+.global __exit
+
 .type __reset @function
+.type __irq_handler @function
 .type __init @function
-.type __start @function
+.type __exit @function
 
 __reset:
 
@@ -79,9 +83,6 @@ __init:
 
     ebreak
 
-__start:
+__exit:
 
-	lui     t1, %hi(__sdram_start)
-	addi    t1, t1, %lo(__sdram_start)
-
-	jal		t1, 0
+	j __fw_start

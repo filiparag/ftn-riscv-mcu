@@ -1,29 +1,24 @@
 ENTRY(__reset)
 
 MEMORY {
-	rom (rx) : ORIGIN = 0x0, LENGTH = 0x1000
-	bram (rw) : ORIGIN = 0x1000, LENGTH = 0x9000
-	sdram (rwx) : ORIGIN = 0xC000, LENGTH = 0x100000
+	bram 	(rw) : ORIGIN = 0x00000, LENGTH = 0x10000
+	brom 	(rx) : ORIGIN = 0x10000, LENGTH = 0x01000
+	sdram	(rw) : ORIGIN = 0x11000, LENGTH = 0xEF000
 }
 
 SECTIONS {
-	.text 0x0 : {
+	.firmware 0x00000 : {
 		. = ALIGN(4);
-		*(.init)
-		__reset = 0x0;
-		__irq_handler = 0x60;
-		__text_start = . ;
-		*(.text)
-		*(.data)
-		*(.strings)
-		__text_end = . ;
-	} > rom
-	.stack 0x3000 : {
+		__fw_start = . ;
+		. = . + 0x07FFC;
+		__fw_end = . ;
+	} > bram
+	.stack 0x08000 : {
 		__stack_end = . ;
-		. = . + 0x4FFC;
+		. = . + 0x3FFC;
 		__stack_start = . ;
 	} > bram
-	.mmap 0x8000 : {
+	.mmap 0x0C000 : {
 		. = ALIGN(4);
 		__mmap_start = . ;
 		__gpio_led = . + 0x0000;
@@ -46,11 +41,22 @@ SECTIONS {
 		. = . + 0xFFC;
 		__mmap_end = . ;
 	} > bram
+	.text 0x10000 : {
+		. = ALIGN(4);
+		*(.init)
+		__reset = 0x0;
+		__irq_handler = 0x60;
+		__text_start = . ;
+		*(.text)
+		*(.data)
+		*(.strings)
+		__text_end = . ;
+	} > brom
 	__global_pointer = . ;
-	.sdram 0xC000 : {
+	.sdram 0x11000 : {
 		. = ALIGN(4);
 		__sdram_start = . ;
-		. = . + 0xFFFFC;
+		. = . + 0xEEFFC;
 		__sdram_end = . ;
 	} > sdram
 }
