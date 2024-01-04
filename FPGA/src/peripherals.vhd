@@ -32,9 +32,14 @@ entity Peripherals is
 		i_pb : in std_logic_vector(4 downto 0);
 		-- Switches
 		i_sw : in std_logic_vector(7 downto 0);
-		-- UART
+		-- UART 0
 		i_uart0_rx : in std_logic;
 		o_uart0_tx : out std_logic;
+		o_uart0_ndsr : out std_logic;
+		o_uart0_ncts : out std_logic;
+		i_uart0_nrts : in std_logic;
+		i_uart0_ndtr : in std_logic;
+		-- UART 1
 		i_uart1_rx : in std_logic;
 		o_uart1_tx : out std_logic;
 		-- External IRQ
@@ -55,6 +60,7 @@ architecture Behavioral of Peripherals is
 
 	signal s_uart0_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart0_rx_dv : std_logic;
+
 	signal s_uart1_rx_byte : std_logic_vector(7 downto 0);
 	signal s_uart1_rx_dv : std_logic;
 
@@ -62,6 +68,7 @@ architecture Behavioral of Peripherals is
 	signal s_uart0_tx_dv : std_logic;
 	signal s_uart0_tx_active : std_logic;
 	signal s_uart0_tx_done : std_logic;
+
 	signal s_uart1_tx_byte : std_logic_vector(7 downto 0);
 	signal s_uart1_tx_dv : std_logic;
 	signal s_uart1_tx_active : std_logic;
@@ -69,8 +76,12 @@ architecture Behavioral of Peripherals is
 
 	signal s_uart0_rx_ready : std_logic;
 	signal s_uart0_tx_ready : std_logic;
+
 	signal s_uart1_rx_ready : std_logic;
 	signal s_uart1_tx_ready : std_logic;
+
+	signal s_uart0_ndsr : std_logic;
+	signal s_uart0_ncts : std_logic;
 
 	signal s_btn_sw : std_logic_vector(12 downto 0);
 	signal s_btn_sw_changed : std_logic;
@@ -169,7 +180,7 @@ begin
 			o_RX_DV     => s_uart0_rx_dv,
 			o_RX_Byte   => s_uart0_rx_byte
 		);
-		
+
 	uart1_rx : entity work.UART_RX
 		generic map (
 			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 2_000_000 -- 2 Mbps
@@ -193,7 +204,7 @@ begin
 			o_TX_Serial => o_uart0_tx,
 			o_TX_Done   => s_uart0_tx_done
 		);
-		
+
 	uart1_tx : entity work.UART_TX
 		generic map (
 			g_CLKS_PER_BIT => g_CLK_FREQ_HZ / 2_000_000 -- 2 Mbps
@@ -228,10 +239,20 @@ begin
 			o_sw_event		=> s_irq(IRQ_SW)
 		);
 
+
 	o_led <= s_led;
+
+	----------
+	-- UART --
+	----------
 
 	o_sem(1) <= s_uart0_rx_ready;
 	o_sem(0) <= s_uart0_tx_ready;
+
+	--o_led <= not i_uart0_nrts & not i_uart0_ndtr & "0000" & not s_uart0_ndsr & not s_uart0_ncts;
+
+	o_uart0_ndsr <= s_uart0_ndsr;
+	o_uart0_ncts <= s_uart0_ncts;
 
 	----------------
 	-- Interrupts --
@@ -260,7 +281,7 @@ begin
 
 			s_uart0_tx_byte <= (others => '0');
 			s_uart0_tx_dv <= '0';
-			
+
 			s_uart1_tx_byte <= (others => '0');
 			s_uart1_tx_dv <= '0';
 
@@ -302,7 +323,7 @@ begin
 						s_uart0_tx_byte <= i_wb_data(7 downto 0);
 						s_uart0_tx_dv <= '1';
 					end if;
-					
+
 				-- UART1 TX
 				elsif i_wb_addr = ADDR_UART1_TX then
 					if s_uart1_tx_active = '0' and s_uart1_tx_dv = '0' then
@@ -332,15 +353,22 @@ begin
 		if(rst_n = '0') then
 			s_uart0_rx_ready <= '0';
 			s_uart1_rx_ready <= '0';
+
+			s_uart0_ndsr <= '1';
+			s_uart0_ncts <= '1';
+
 			o_wb_data <= (others => '1');
 		elsif rising_edge(clk) then
 			if s_uart0_rx_dv = '1' then
 				s_uart0_rx_ready <= '1';
 			end if;
-			
+
 			if s_uart1_rx_dv = '1' then
 				s_uart1_rx_ready <= '1';
 			end if;
+
+			s_uart0_ndsr <= '0';
+			s_uart0_ncts <= '0';
 
 			if i_wb_stb = '1' and i_wb_we = '0' then
 
@@ -387,7 +415,7 @@ begin
 				elsif i_wb_addr = ADDR_UART0_TX_RDY then
 					o_wb_data(0) <= s_uart0_tx_ready;
 					o_wb_data(31 downto 1) <= (others => '0');
-					
+
 				-- UART1 RX ready
 				elsif i_wb_addr = ADDR_UART1_RX_RDY then
 					o_wb_data(0) <= s_uart1_rx_ready;
@@ -407,7 +435,7 @@ begin
 					else
 						o_wb_data(31 downto 0) <= (others => '1'); -- stall
 					end if;
-					
+
 				-- UART1 RX
 				elsif i_wb_addr = ADDR_UART1_RX then
 					if s_uart1_rx_ready = '1' then

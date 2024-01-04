@@ -124,8 +124,8 @@ set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVCMOS"
 set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 3.3V
 set_location_assignment PIN_A4 -to i_serial_rx
 set_location_assignment PIN_B4 -to o_serial_tx
-set_location_assignment PIN_A6 -to on_serial_cts
-set_location_assignment PIN_A7 -to on_serial_dsr
+set_location_assignment PIN_A6 -to o_serial_ncts
+set_location_assignment PIN_A7 -to o_serial_ndsr
 set_location_assignment PIN_F1 -to i_rst -comment i_pb_rst
 set_global_assignment -name EDA_TEST_BENCH_NAME DMA_FSM_tb -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id DMA_FSM_tb
@@ -235,8 +235,8 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_led[5]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_led[6]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_led[7]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_serial_tx
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to on_serial_cts
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to on_serial_dsr
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_serial_ncts
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_serial_ndsr
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_serial_rx
 set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to i_rst
 set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "100 Hz" -to i_rst
@@ -300,8 +300,9 @@ set_global_assignment -name VHDL_FILE src/reset_register.vhd
 set_global_assignment -name VHDL_FILE src/peripherals.vhd
 set_global_assignment -name VERILOG_FILE src/memory_sdram.v
 set_global_assignment -name VHDL_FILE src/gpio_lprs1.vhd
-set_location_assignment PIN_B6 -to i_serial_dtr
-set_location_assignment PIN_B5 -to i_serial_rts
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_serial_rts
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_serial_dtr
+set_location_assignment PIN_B6 -to i_serial_ndtr
+set_location_assignment PIN_B5 -to i_serial_nrts
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_serial_nrts
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_serial_ndtr
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

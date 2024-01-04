@@ -60,7 +60,8 @@ end entity;
 architecture rtl of wb_slave_arbiter is
 
 	-- Firmware		0x00000 .. 0x07FFC ( 32KiB)
-	-- Stack			0x08000 .. 0x0BFFC ( 16KiB)
+	-- Dynamic		0x08000 .. 0x087FC (  2KiB)
+	-- Stack			0x08800 .. 0x0BFFC ( 14KiB)
 	-- Peripherals	0x0C000 .. 0x0FFFC ( 16KiB)
 	-- Bootloader	0x10000 .. 0x10FFC (  4KiB)
 	-- SDRAM			0x11000 .. 0xFFFFC (956KiB)
