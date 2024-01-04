@@ -367,8 +367,10 @@ module top (
 		.o_mux_row_or_digit (o_mux_row_or_digit),
 		.i_sw (i_sw),
 		.i_pb (i_pb),
-		.i_uart_rx (i_serial_rx), //////////////////
-		.o_uart_tx (o_serial_tx), //////////////////
+		.i_uart0_rx (i_serial_rx),
+		.o_uart0_tx (o_serial_tx),
+		.i_uart1_rx (i_uart_rx),
+		.o_uart1_tx (o_uart_tx),
 		.o_irq (s_irq),
 		.i_eoi (s_eoi)
 	);

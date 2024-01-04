@@ -11,10 +11,15 @@ extern const usize __sdram_start;
 extern const usize __sdram_end;
 
 /* UART */
-extern const volatile bool __uart_rx_ready;
-extern const volatile bool __uart_tx_ready;
-extern const volatile u8 __uart_rx;
-extern volatile u8 __uart_tx;
+extern const volatile bool __uart0_rx_ready;
+extern const volatile bool __uart0_tx_ready;
+extern const volatile u8 __uart0_rx;
+extern volatile u8 __uart0_tx;
+
+extern const volatile bool __uart1_rx_ready;
+extern const volatile bool __uart1_tx_ready;
+extern const volatile u8 __uart1_rx;
+extern volatile u8 __uart1_tx;
 
 /* Runtime clock */
 extern volatile u64 __counter_nanos;

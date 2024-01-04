@@ -2,15 +2,28 @@
 #include "../include/memory.h"
 
 void put_ch(const char character) {
-  while (!__uart_tx_ready)
+  while (!__uart0_tx_ready)
     ;
-  __uart_tx = character;
+  __uart0_tx = character;
 }
 
 char get_ch(void) {
-  while (!__uart_rx_ready)
+  while (!__uart0_rx_ready)
     ;
-  return __uart_rx;
+  return __uart0_rx;
+}
+
+void put_dbg(const char *const buffer) {
+  char *character = (char *)buffer;
+  while (*character != '\0') {
+    while (!__uart1_tx_ready)
+      ;
+    __uart1_tx = *character;
+    ++character;
+  }
+  while (!__uart1_tx_ready)
+    ;
+  __uart1_tx = '\n';
 }
 
 void sleep(const u64 interval_ms) {
@@ -109,39 +122,50 @@ void stk_read_sign(void) {
 
 void optiboot(void) {
   flash_led();
+  put_dbg("Optiboot started!");
   u16 address;
   for (;;) {
     switch (get_ch()) {
     case STK_GET_PARAMETER:
       stk_get_parameter();
+      put_dbg("STK_GET_PARAMETER");
       break;
     case STK_SET_DEVICE:
       get_n_ch(20);
+      put_dbg("STK_SET_DEVICE");
       break;
     case STK_SET_DEVICE_EXT:
       get_n_ch(5);
+      put_dbg("STK_SET_DEVICE_EXT");
       break;
     case STK_LEAVE_PROGMODE:
       verify_space();
       put_ch(STK_OK);
+      put_dbg("STK_LEAVE_PROGMODE");
       return;
     case STK_LOAD_ADDRESS:
       stk_load_address(&address);
+      put_dbg("STK_LOAD_ADDRESS");
       break;
     case STK_UNIVERSAL:
       stk_univeral();
+      put_dbg("STK_UNIVERSAL");
       break;
     case STK_PROG_PAGE:
       stk_prog_page(address);
+      put_dbg("STK_PROG_PAGE");
       break;
     case STK_READ_PAGE:
       stk_read_page(address);
+      put_dbg("STK_READ_PAGE");
       break;
     case STK_READ_SIGN:
       stk_read_sign();
+      put_dbg("STK_READ_SIGN");
       break;
     default:
       verify_space();
+      put_dbg("STK_DEFAULT");
     }
     put_ch(STK_OK);
   }
