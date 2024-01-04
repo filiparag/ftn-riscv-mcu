@@ -42,6 +42,6 @@ build/%.quartus.hex: build/%.elf
 		--bit-width 32 \
 		--input $^ \
 		--output /dev/stdout | \
-	awk -f ./utils/quartus_ihex.awk > $@
+	awk -f ../common/scripts/quartus_ihex.awk > $@
 
 build: build/${TARGET}.quartus.hex build/${TARGET}.lst

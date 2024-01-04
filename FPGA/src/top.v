@@ -12,14 +12,17 @@ module top (
 	output  [1:0] 	o_mux_sel_color_or_7segm, // RGB7segm
 	output  [2:0] 	o_sem,
 
+	// Internal UART
 	input  i_serial_rx,
 	output o_serial_tx,
-	output on_serial_cts,
 	output on_serial_dsr,
+	output on_serial_cts,
+	//input i_serial_rts,
+	//input i_serial_dtr,
 
+	// External UART
 	input i_uart_rx,
 	output o_uart_tx,
-	output o_debug_tx,
 
 	// SDRAM
 	output				o_ram_clk,
@@ -33,6 +36,10 @@ module top (
 	inout [15:0] 		io_ram_data,
 	output [1:0]  		o_ram_dqm
 );
+
+	/////////////////////////////////
+	assign on_serial_cts = 0;
+	assign on_serial_dsr = 0;
 
 
 	wire 		s_o_ram_we_n;
@@ -317,21 +324,21 @@ module top (
 		.o_debug			(s_o_debug			)
 	);
 
-	uart_bridge uart (
-		.i_clk           (s_sys_clk         ),
-		.in_rst          (n_rst            ),
-
-		.i_serial_rx     (i_serial_rx       ),
-		.o_serial_tx     (o_serial_tx       ),
-		.on_serial_cts   (on_serial_cts     ),
-		.on_serial_dsr   (on_serial_dsr     ),
-
-		//.i_byte_tx_data  (o_dma_byte_read   ),
-		//.i_byte_tx_valid (o_dma_data_valid  ),
-		.o_byte_tx_busy  (s_tx_active       ),
-		.o_byte_rx_data  (s_data_byte_write ),
-		.o_byte_rx_valid (data_valid_w      )
-	);
+//	uart_bridge uart (
+//		.i_clk           (s_sys_clk         ),
+//		.in_rst          (n_rst            ),
+//
+//		.i_serial_rx     (i_serial_rx       ),
+//		.o_serial_tx     (o_serial_tx       ),
+//		.on_serial_cts   (on_serial_cts     ),
+//		.on_serial_dsr   (on_serial_dsr     ),
+//
+//		//.i_byte_tx_data  (o_dma_byte_read   ),
+//		//.i_byte_tx_valid (o_dma_data_valid  ),
+//		.o_byte_tx_busy  (s_tx_active       ),
+//		.o_byte_rx_data  (s_data_byte_write ),
+//		.o_byte_rx_valid (data_valid_w      )
+//	);
 
 	sdram_pll pll1 (
 		.areset		(i_rst),
@@ -360,9 +367,8 @@ module top (
 		.o_mux_row_or_digit (o_mux_row_or_digit),
 		.i_sw (i_sw),
 		.i_pb (i_pb),
-		.i_uart_rx (i_uart_rx),
-		.o_uart_tx (o_uart_tx),
-		.o_debug_tx (o_debug_tx),
+		.i_uart_rx (i_serial_rx), //////////////////
+		.o_uart_tx (o_serial_tx), //////////////////
 		.o_irq (s_irq),
 		.i_eoi (s_eoi)
 	);
@@ -380,7 +386,7 @@ module top (
 		.o_wb_ack	 (s_wb_bram_ack),
 		.o_wb_data	 (s_wb_bram_data_i),
 	);
-	
+
 	MEM_BROM brom (
 		.clk       (s_sys_clk    			),
 		.rst_n      (n_rst        	),

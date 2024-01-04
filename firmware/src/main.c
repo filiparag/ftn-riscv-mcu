@@ -1,11 +1,10 @@
 #include "../include/gpio.h"
-#include "../include/optiboot.h"
+#include "../include/time.h"
 
 int main(void) {
-  set_7segm(0b01111110011001110000111100110000);
-  optiboot();
   for (;;) {
-    set_7segm(0b00001110011001110000010101011011);
+    set_hex((usize)millis() >> 10);
+    sleep(250);
   }
   return 0;
 }

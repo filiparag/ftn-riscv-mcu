@@ -1,12 +1,12 @@
 .PRECIOUS: build/%.elf build/%.bin
+.PHONY: build
 
 RV32_TOOLCHAIN	?= /opt/riscv/bin/riscv32-unknown-elf-
+E2X_TOOLCHAIN	?= /opt/elf2hex/
 RV32_ARCH	?= rv32im
-LINKER_SCRIPT	?= picorv32.lds
-UART_DMA	?= /dev/serial/by-id/usb-Arrow_Arrow_USB_Blaster_AR45NPS4-if01-port0
-UART_AVRDUDE	?= /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0
-DMA_LOADER	?= ../software/max1000_riscv_loader/build/max1000_riscv_loader
-TARGET		?= lprs_cpu_bootloader
+LINKER_SCRIPT	?= firmware.lds
+TARGET		?= firmware
+AVRDUDE_UART	?= /dev/serial/by-id/usb-Arrow_Arrow_USB_Blaster_AR45NPS4-if01-port0
 AVRDUDE_PARTNO	?= atmega328p
 AVRDUDE_PROG	?= arduino
 BAUD_RATE	?= 115200
@@ -38,30 +38,21 @@ build/%.bin: build/%.elf
 build/%.lst: build/%.elf
 	@${RV32_TOOLCHAIN}objdump -S $^ > $@
 
-build/%.hex: build/%.elf
+build/%.intel.hex: build/%.elf
 	@${RV32_TOOLCHAIN}objcopy -O ihex $^ $@
 
-build/%.fake.hex: build/%.bin
-	@utils/makehex.py $^ 3072 $@
+build/%.quartus.hex: build/%.elf
+	@${E2X_TOOLCHAIN}elf2hex \
+		--bit-width 32 \
+		--input $^ \
+		--output /dev/stdout | \
+	awk -f ../common/scripts/quartus_ihex.awk > $@
 
-build: build/${TARGET}.fake.hex build/${TARGET}.lst
+build: build/${TARGET}.intel.hex build/${TARGET}.lst
 
-upload: build
-	@sudo modprobe ftdi_sio
-	@sleep 0.5
-	@${DMA_LOADER} ${UART_DMA} build/${TARGET}.fake.hex
-	@sudo rmmod ftdi_sio || true
-	@sudo rmmod usbserial || true
-	@jtagconfig
-
-intercept:
-	@sudo interceptty -l -v \
-		${UART_AVRDUDE} \
-		/dev/ttyINTRCPT | awk -f ./utils/interceptty.awk
-
-avrdude: build/${TARGET}.hex
+upload: build/${TARGET}.intel.hex
 	@avrdude \
 		-v -p ${AVRDUDE_PARTNO} -c ${AVRDUDE_PROG} \
 		-b ${BAUD_RATE} -D \
-		-U flash:w:build/${TARGET}.hex:i \
-		-P /dev/ttyINTRCPT
+		-U flash:w:build/${TARGET}.intel.hex:i \
+		-P ${AVRDUDE_UART}
