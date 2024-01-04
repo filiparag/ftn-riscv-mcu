@@ -4,14 +4,13 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_misc.all;
 use ieee.numeric_std.all;
 use IEEE.math_real.all;
-use std.textio.all;
 
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
-entity ROM is
+entity MEM_BRAM is
 	generic (
-		g_ROM_SIZE : positive := 1024
+		g_RAM_SIZE : positive := 12288 -- 48KiB
 	);
 	port (
 		clk : in std_logic;
@@ -24,52 +23,57 @@ entity ROM is
 		i_wb_sel : in std_logic_vector(3 downto 0);
 		o_wb_stall : out std_logic;
 		o_wb_ack : out std_logic;
-		o_wb_data : out std_logic_vector(31 downto 0);
-		
-		-- LEDs
-		o_led : out std_logic_vector(7 downto 0)
+		o_wb_data : out std_logic_vector(31 downto 0)
 	);
-end ROM;
+end MEM_BRAM;
 
-architecture Behavioral of ROM is
+architecture Behavioral of MEM_BRAM is
 	
-	constant c_rom_addr_len : positive := positive(ceil(log2(real(g_ROM_SIZE))));
+	constant c_ram_addr_len : positive := positive(ceil(log2(real(g_RAM_SIZE))));
 	
 	signal s_wb_ack : std_logic;
 	signal s_wb_stall : std_logic;
 	
-	signal s_rom_rden : std_logic;
-	signal s_rom_addr : std_logic_vector(c_rom_addr_len - 1 downto 0);
-	signal s_rom_data : std_logic_vector(31 downto 0);
+	signal s_ram_wren : std_logic;
+	signal s_ram_rden : std_logic;
+	signal s_ram_addr : std_logic_vector(c_ram_addr_len - 1 downto 0);
+	signal s_ram_data : std_logic_vector(31 downto 0);
 	
 begin
 
 	altsyncram_component : altsyncram
 	GENERIC MAP (
-		address_aclr_a => "NONE",
+		byte_size => 8,
 		clock_enable_input_a => "BYPASS",
 		clock_enable_output_a => "BYPASS",
-		init_file => "../bootloader/build/bootloader.quartus.hex",
 		intended_device_family => "MAX 10",
-		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME=BROM",
+		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME=BRAM",
 		lpm_type => "altsyncram",
-		numwords_a => g_ROM_SIZE,
-		operation_mode => "ROM",
+		numwords_a => g_RAM_SIZE,
+		operation_mode => "SINGLE_PORT",
 		outdata_aclr_a => "NONE",
 		outdata_reg_a => "UNREGISTERED",
-		widthad_a => c_rom_addr_len,
+		power_up_uninitialized => "FALSE",
+		ram_block_type => "M9K",
+		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
+		widthad_a => c_ram_addr_len,
 		width_a => 32,
-		width_byteena_a => 1
+		width_byteena_a => 4
 	)
 	PORT MAP (
-		address_a => s_rom_addr(c_rom_addr_len - 1 downto 0),
+		address_a => s_ram_addr,
+		byteena_a => i_wb_sel,
 		clock0 => clk,
-		rden_a => s_rom_rden,
+		data_a => i_wb_data,
+		rden_a => s_ram_rden,
+		wren_a => s_ram_wren,
 		q_a => o_wb_data
 	);
 
-	s_rom_rden <= '1';
-	s_rom_addr <= i_wb_addr(c_rom_addr_len - 1 + 2 downto 2) when i_wb_addr < g_ROM_SIZE * 4 else
+	s_ram_wren <= '1' when i_wb_stb = '1' and i_wb_we = '1' else '0';
+	s_ram_rden <= '1' when i_wb_stb = '1' and i_wb_we = '0' else '0';
+	
+	s_ram_addr <= i_wb_addr(c_ram_addr_len - 1 + 2 downto 2) when i_wb_addr < g_RAM_SIZE * 4 else
 					  (others => '0');
 
 	wb_ack : process(clk, rst_n)

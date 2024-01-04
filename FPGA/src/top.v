@@ -1,7 +1,5 @@
 `timescale 1 ns / 1 ps
 
-//`define HOLD								// Hold or DBG registers
-
 module top (
 	input   	i_clk,
 	input		i_rst,
@@ -36,7 +34,7 @@ module top (
 	output [1:0]  		o_ram_dqm
 );
 
-	//moved here for simulation purposes
+
 	wire 		s_o_ram_we_n;
 	wire [15:0] s_o_ram_data;
 
@@ -52,8 +50,7 @@ module top (
 
 	wire			s_sys_clk;
 
-
-	// Wishbone interface signals -master2arbiter
+	// Wishbone interface signals
 	wire [31:0]	s_wbm_adr_o;
 	wire [31:0] s_wbm_dat_o;
 	wire [31:0] s_wbm_dat_i;
@@ -69,7 +66,6 @@ module top (
 	wire			s_wb_bram_cyc;
 	wire			s_wb_bram_stb;
 	wire			s_wb_bram_we;
-//	wire [13:0] s_wb_bram_addr; // changed
 	wire [31:0] s_wb_bram_addr;
 	wire [31:0] s_wb_bram_data_i;
 	wire	[3:0] s_wb_bram_sel;
@@ -88,27 +84,27 @@ module top (
 	wire			s_wb_sdram_ack;
 	wire [31:0]	s_wb_sdram_data_o;
 
-	//  Wishbone MM REG
-	wire		s_wb_periph_cyc;
-	wire		s_wb_periph_stb;
-	wire		s_wb_periph_we;
-	wire [31:0] s_wb_periph_addr;
-	wire [31:0] s_wb_periph_data_i;
-	wire [3:0] 	s_wb_periph_sel;
-	wire		s_wb_periph_stall;
-	wire		s_wb_periph_ack;
-	wire [31:0]	s_wb_periph_data_o;
+	//  Wishbone MMAP
+	wire		s_wb_mmap_cyc;
+	wire		s_wb_mmap_stb;
+	wire		s_wb_mmap_we;
+	wire [31:0] s_wb_mmap_addr;
+	wire [31:0] s_wb_mmap_data_i;
+	wire [3:0] 	s_wb_mmap_sel;
+	wire		s_wb_mmap_stall;
+	wire		s_wb_mmap_ack;
+	wire [31:0]	s_wb_mmap_data_o;
 
-	//  Wishbone ROM
-	wire		s_wb_rom_cyc;
-	wire		s_wb_rom_stb;
-	wire		s_wb_rom_we;
-	wire [31:0] s_wb_rom_addr;
-	wire [31:0] s_wb_rom_data_i;
-	wire [3:0] 	s_wb_rom_sel;
-	wire		s_wb_rom_stall;
-	wire		s_wb_rom_ack;
-	wire [31:0]	s_wb_rom_data_o;
+	//  Wishbone BROM
+	wire		s_wb_brom_cyc;
+	wire		s_wb_brom_stb;
+	wire		s_wb_brom_we;
+	wire [31:0] s_wb_brom_addr;
+	wire [31:0] s_wb_brom_data_i;
+	wire [3:0] 	s_wb_brom_sel;
+	wire		s_wb_brom_stall;
+	wire		s_wb_brom_ack;
+	wire [31:0]	s_wb_brom_data_o;
 
 	// SDRAM control signals
 	wire s_o_ram_cs_n;
@@ -125,7 +121,6 @@ module top (
 	wire [31:0] s_o_debug;
 
 	wire			startup_hold;
-	//wire 			n_rst;
 
 	// Pico Co-Processor Interface
 	wire 			s_pcpi_valid;
@@ -151,20 +146,20 @@ module top (
 	wire 			mem_ready;
 	wire [31:0] mem_addr;
 	wire [31:0] mem_wdata;
-	wire [31:0] o_dma_data;
+	//wire [31:0] o_dma_data;
 	wire  [3:0] mem_wstrb;
 
 	// UART signals		-- TODO: Rename to remove confusion
 	wire 			data_valid_w;
-	wire 			o_dma_data_valid;
+	//wire 			o_dma_data_valid;
 	wire 			s_tx_active;
 	wire  [7:0] s_data_byte_write;
-	wire  [7:0] o_dma_byte_read;
-	wire [31:0] o_dma_address;
+	//wire  [7:0] o_dma_byte_read;
+	//wire [31:0] o_dma_address;
 	wire [31:0] s_data;
 	wire [31:0] mem_rdata;
 	wire [31:0] o_mm_data;
-	wire 			o_dma_mem_we;
+	//wire 			o_dma_mem_we;
 
 	// Other signals
 	wire 			rst_proc;			//manually reset the processor from rst reg
@@ -275,55 +270,29 @@ module top (
 		.i_wb_sdram_stall	(s_wb_sdram_stall	),
 		.i_wb_sdram_ack	(s_wb_sdram_ack	),
 		.i_wb_sdram_data	(s_wb_sdram_data_i),
-	 // MM REG
-	   .o_wb_periph_cyc	(s_wb_periph_cyc	),
-		.o_wb_periph_stb	(s_wb_periph_stb	),
-		.o_wb_periph_we		(s_wb_periph_we	),
-		.o_wb_periph_addr	(s_wb_periph_addr),
-		.o_wb_periph_data	(s_wb_periph_data_o),
-		.o_wb_periph_sel	(s_wb_periph_sel	),
-		.i_wb_periph_stall	(s_wb_periph_stall	),
-		.i_wb_periph_ack	(s_wb_periph_ack	),
-		.i_wb_periph_data	(s_wb_periph_data_i),
-	 // ROM
-	   .o_wb_rom_cyc	(s_wb_rom_cyc	),
-		.o_wb_rom_stb	(s_wb_rom_stb	),
-		.o_wb_rom_we		(s_wb_rom_we	),
-		.o_wb_rom_addr	(s_wb_rom_addr),
-		.o_wb_rom_data	(s_wb_rom_data_o),
-		.o_wb_rom_sel	(s_wb_rom_sel	),
-		.i_wb_rom_stall	(s_wb_rom_stall	),
-		.i_wb_rom_ack	(s_wb_rom_ack	),
-		.i_wb_rom_data	(s_wb_rom_data_i)
+	 // MMAP
+	   .o_wb_mmap_cyc	(s_wb_mmap_cyc	),
+		.o_wb_mmap_stb	(s_wb_mmap_stb	),
+		.o_wb_mmap_we		(s_wb_mmap_we	),
+		.o_wb_mmap_addr	(s_wb_mmap_addr),
+		.o_wb_mmap_data	(s_wb_mmap_data_o),
+		.o_wb_mmap_sel	(s_wb_mmap_sel	),
+		.i_wb_mmap_stall	(s_wb_mmap_stall	),
+		.i_wb_mmap_ack	(s_wb_mmap_ack	),
+		.i_wb_mmap_data	(s_wb_mmap_data_i),
+	 // BROM
+	   .o_wb_brom_cyc	(s_wb_brom_cyc	),
+		.o_wb_brom_stb	(s_wb_brom_stb	),
+		.o_wb_brom_we		(s_wb_brom_we	),
+		.o_wb_brom_addr	(s_wb_brom_addr),
+		.o_wb_brom_data	(s_wb_brom_data_o),
+		.o_wb_brom_sel	(s_wb_brom_sel	),
+		.i_wb_brom_stall	(s_wb_brom_stall	),
+		.i_wb_brom_ack	(s_wb_brom_ack	),
+		.i_wb_brom_data	(s_wb_brom_data_i)
    );
 
-	memory bram (
-		.clk         	(s_sys_clk    	),
-		.resetn      	(n_rst     	),
-		// DMA interface
-		.mem_valid   	(mem_valid  	),
-		.mem_instr   	(mem_instr  	),
-		.mem_ready   	(mem_ready  	),
-		.mem_addr    	(mem_addr   	),
-		.mem_wdata   	(mem_wdata  	),
-		.mem_rdata 		(mem_rdata 		),
-		.mem_la_write	(o_dma_mem_we	),
-		.mem_la_addr 	(o_dma_address	),
-		.mem_la_wdata	(o_dma_data 	),
-		.mem_la_wstrb	(const_wstrb	),
-		// Wishbone interface
-		.i_wb_cyc		(s_wb_bram_cyc	),
-		.i_wb_stb		(s_wb_bram_stb	),
-		.i_wb_we		(s_wb_bram_we	),
-		.i_wb_addr		(s_wb_bram_addr),
-		.i_wb_data		(s_wb_bram_data_o),
-		.i_wb_sel		(s_wb_bram_sel	),
-		.o_wb_stall		(s_wb_bram_stall),
-		.o_wb_ack		(s_wb_bram_ack	),
-		.o_wb_data		(s_wb_bram_data_i)
-	);
-
-	wbsdram sdram_ctrl(
+	wbsdram sdram_ctrl (
 		.i_clk			(s_sys_clk			),
 		.i_wb_cyc		(s_wb_sdram_cyc	),
 		.i_wb_stb		(s_wb_sdram_stb	),
@@ -357,14 +326,14 @@ module top (
 		.on_serial_cts   (on_serial_cts     ),
 		.on_serial_dsr   (on_serial_dsr     ),
 
-		.i_byte_tx_data  (o_dma_byte_read   ),
-		.i_byte_tx_valid (o_dma_data_valid  ),
+		//.i_byte_tx_data  (o_dma_byte_read   ),
+		//.i_byte_tx_valid (o_dma_data_valid  ),
 		.o_byte_tx_busy  (s_tx_active       ),
 		.o_byte_rx_data  (s_data_byte_write ),
 		.o_byte_rx_valid (data_valid_w      )
 	);
 
-	sdram_pll pll1(
+	sdram_pll pll1 (
 		.areset		(i_rst),
 		.inclk0		(i_clk),
 		.c0			(s_sys_clk),
@@ -372,32 +341,18 @@ module top (
 		.locked		(n_rst)
 	);
 
-	DMA_FSM dma (
-		.i_Clk       (s_sys_clk      		),
-		.i_Rstn      (n_rst          	),
-		.i_Data_Valid(data_valid_w    	),
-		.i_UART_Data (s_data_byte_write	),
-		.i_Mem_Data  (mem_rdata	      	),
-		.i_TX_Active (s_tx_active	 		),
-		.o_Data      (o_dma_data 			),
-		.o_Byte		 (o_dma_byte_read		),
-		.o_Data_Valid(o_dma_data_valid 	),
-		.o_Address	 (o_dma_address   	),
-		.o_WE        (o_dma_mem_we    	)
-	);
-
-	Peripherals lprs (
+	Peripherals mmap (
 		.clk       (s_sys_clk    			),
 		.rst_n      (n_rst        	),
-		.i_wb_cyc	 (s_wb_periph_cyc	),
-		.i_wb_stb	 (s_wb_periph_stb	),
-		.i_wb_we	 	 (s_wb_periph_we		),
-		.i_wb_addr	 (s_wb_periph_addr	),
-		.i_wb_data	 (s_wb_periph_data_o	),
-		.i_wb_sel	 (s_wb_periph_sel	),
-		.o_wb_stall  (s_wb_periph_stall  ),
-		.o_wb_ack	 (s_wb_periph_ack	),
-		.o_wb_data	 (s_wb_periph_data_i	),
+		.i_wb_cyc	 (s_wb_mmap_cyc	),
+		.i_wb_stb	 (s_wb_mmap_stb	),
+		.i_wb_we	 	 (s_wb_mmap_we		),
+		.i_wb_addr	 (s_wb_mmap_addr	),
+		.i_wb_data	 (s_wb_mmap_data_o	),
+		.i_wb_sel	 (s_wb_mmap_sel	),
+		.o_wb_stall  (s_wb_mmap_stall  ),
+		.o_wb_ack	 (s_wb_mmap_ack	),
+		.o_wb_data	 (s_wb_mmap_data_i	),
 		.o_led (o_led),
 		.o_sem (o_sem),
 		.o_mux_sel_color_or_7segm (o_mux_sel_color_or_7segm),
@@ -412,30 +367,33 @@ module top (
 		.i_eoi (s_eoi)
 	);
 
-	ROM rom (
+	MEM_BRAM bram (
+		.clk       	 (s_sys_clk),
+		.rst_n       (n_rst),
+		.i_wb_cyc	 (s_wb_bram_cyc),
+		.i_wb_stb	 (s_wb_bram_stb),
+		.i_wb_we	 	 (s_wb_bram_we),
+		.i_wb_addr	 (s_wb_bram_addr),
+		.i_wb_data	 (s_wb_bram_data_o),
+		.i_wb_sel	 (s_wb_bram_sel),
+		.o_wb_stall  (s_wb_bram_stall),
+		.o_wb_ack	 (s_wb_bram_ack),
+		.o_wb_data	 (s_wb_bram_data_i),
+	);
+	
+	MEM_BROM brom (
 		.clk       (s_sys_clk    			),
 		.rst_n      (n_rst        	),
-		.i_wb_cyc	 (s_wb_rom_cyc	),
-		.i_wb_stb	 (s_wb_rom_stb	),
-		.i_wb_we	 	 (s_wb_rom_we		),
-		.i_wb_addr	 (s_wb_rom_addr	),
-		.i_wb_data	 (s_wb_rom_data_o	),
-		.i_wb_sel	 (s_wb_rom_sel	),
-		.o_wb_stall  (s_wb_rom_stall  ),
-		.o_wb_ack	 (s_wb_rom_ack	),
-		.o_wb_data	 (s_wb_rom_data_i	),
-		//.o_led (o_led) // debug
+		.i_wb_cyc	 (s_wb_brom_cyc	),
+		.i_wb_stb	 (s_wb_brom_stb	),
+		.i_wb_we	 	 (s_wb_brom_we		),
+		.i_wb_addr	 (s_wb_brom_addr	),
+		.i_wb_data	 (s_wb_brom_data_o	),
+		.i_wb_sel	 (s_wb_brom_sel	),
+		.o_wb_stall  (s_wb_brom_stall  ),
+		.o_wb_ack	 (s_wb_brom_ack	),
+		.o_wb_data	 (s_wb_brom_data_i	),
 	);
-
-//	RST_Reg rstreg (
-//		.i_Clk       (s_sys_clk    ),
-//		.i_Rstn 		 (n_rst       ),
-//		.i_WE 		 (o_dma_mem_we	),
-//		.i_Address	 (o_dma_address),
-//		.i_Data	 	 (o_dma_data	),
-//		.o_Data		 (rst_proc		)
-//
-//	);
 
 	assign rst_proc = ~n_rst;
 
