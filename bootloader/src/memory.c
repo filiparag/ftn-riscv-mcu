@@ -13,8 +13,3 @@ void zero_init_sdram(void) {
     *sdram = 0;
   }
 }
-
-void init_ram(void) {
-  zero_init_bram();
-  zero_init_sdram();
-}

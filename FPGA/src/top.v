@@ -12,7 +12,6 @@ module top (
 	output  [2:0]	o_mux_row_or_digit,
 	output  [1:0]	o_mux_sel_color_or_7segm, // RGB7segm
 	output  [2:0]	o_sem,
-	
 
 	// Internal UART
 	input  			i_serial_rx,
@@ -39,17 +38,21 @@ module top (
 	output  [1:0]	o_ram_dqm
 );
 
-	wire 			n_rst;
-	wire			s_sys_clk;
-	wire			s_sdram_clk;
-	reg			rst_proc;
+	// Synchronization
+
+	wire 			s_nrst;
+	wire			s_clk_sys;
+	wire			s_clk_sdram;
+	reg			s_rst_proc;
+	reg			s_rst_rom;
+	reg			s_rst_ram;
 
 	//////////////
 	// Wishbone //
 	//////////////
-	
+
 	// Wishbone interface signals
-	
+
 	wire [31:0]	s_wbm_adr_o;
 	wire [31:0] s_wbm_dat_o;
 	wire [31:0] s_wbm_dat_i;
@@ -60,9 +63,9 @@ module top (
 	wire 			s_wbm_stb_o;
 	wire 			s_wbm_ack_i;
 	wire 			s_wbm_cyc_o;
-	
+
 	//  Wishbone BROM
-	
+
 	wire			s_wb_brom_cyc;
 	wire			s_wb_brom_stb;
 	wire			s_wb_brom_we;
@@ -74,7 +77,7 @@ module top (
 	wire [31:0]	s_wb_brom_data_o;
 
 	// Wishbone BRAM
-	
+
 	wire			s_wb_bram_cyc;
 	wire			s_wb_bram_stb;
 	wire			s_wb_bram_we;
@@ -84,9 +87,9 @@ module top (
 	wire			s_wb_bram_stall;
 	wire			s_wb_bram_ack;
 	wire [31:0]	s_wb_bram_data_o;
-	
+
 	//  Wishbone MMAP
-	
+
 	wire			s_wb_mmap_cyc;
 	wire			s_wb_mmap_stb;
 	wire			s_wb_mmap_we;
@@ -98,7 +101,7 @@ module top (
 	wire [31:0]	s_wb_mmap_data_o;
 
 	// Wishbone SDRAM
-	
+
 	wire			s_wb_sdram_cyc;
 	wire			s_wb_sdram_stb;
 	wire			s_wb_sdram_we;
@@ -108,24 +111,24 @@ module top (
 	wire			s_wb_sdram_stall;
 	wire			s_wb_sdram_ack;
 	wire [31:0]	s_wb_sdram_data_o;
-	
+
 	///////////
 	// SDRAM //
 	///////////
-	
+
 	wire 			s_o_ram_cs_n;
 	wire 			s_o_ram_cke;
 	wire 			s_o_ram_ras_n;
 	wire 			s_o_ram_cas_n;
 	wire 			s_o_ram_we_n;
-	
+
 	wire 			s_o_ram_dmod;
 	wire [15:0] s_i_ram_data;
 	wire [15:0] s_o_ram_data;
 	wire [31:0] s_o_debug;
 	wire  [1:0] s_o_ram_bs;
 	wire  [1:0] s_o_ram_dqm;
-	
+
 	wire			s_ram_cs_n;
 	wire			s_ram_cke;
 	wire			s_ram_ras_n;
@@ -133,11 +136,11 @@ module top (
 	wire [1:0]	s_ram_bs;
 	wire [11:0]	s_ram_addr;
 	wire [1:0]  s_ram_dqm;
-	
+
 	assign io_ram_data 	= !s_o_ram_we_n ? s_o_ram_data : 16'bZ;
 	assign s_i_ram_data 	= io_ram_data;
 	assign o_ram_we_n		= s_o_ram_we_n;
-	assign o_ram_clk		= s_sdram_clk;
+	assign o_ram_clk		= s_clk_sdram;
 
 	assign o_ram_cs_n		= s_ram_cs_n;
 	assign o_ram_cke 		= s_ram_cke;
@@ -146,7 +149,7 @@ module top (
 	assign o_ram_bs		= s_ram_bs;
 	assign o_ram_addr		= s_ram_addr;
 	assign o_ram_dqm		= s_ram_dqm;
-	
+
 	//////////////
 	// PicoRV32 //
 	//////////////
@@ -154,7 +157,7 @@ module top (
 	// IRQ interface
 	wire [31:0] s_irq;
 	wire [31:0] s_eoi;
-	
+
 	// Other
 	wire			s_trace_valid;
 	wire [35:0] s_trace_data;
@@ -175,8 +178,8 @@ module top (
 		.LATCHED_IRQ		(32'h ffff_ffff), // Latch all
 		.PROGADDR_IRQ		(32'h 0001_0060) // BROM
 	) picorv32(
-		.wb_rst_i			(rst_proc),
-		.wb_clk_i			(s_sys_clk),
+		.wb_rst_i			(s_rst_proc),
+		.wb_clk_i			(s_clk_sys),
 		.trap					(trap),
 		// Wishbone interface
 		.wbm_adr_o			(s_wbm_adr_o),
@@ -258,8 +261,8 @@ module top (
    );
 
 	MEM_BRAM bram (
-		.clk 					(s_sys_clk),
-		.rst_n       		(n_rst),
+		.clk 					(s_clk_sys),
+		.rst_n       		(~s_rst_ram),
 		.i_wb_cyc	 		(s_wb_bram_cyc),
 		.i_wb_stb	 		(s_wb_bram_stb),
 		.i_wb_we	 	 		(s_wb_bram_we),
@@ -272,8 +275,8 @@ module top (
 	);
 
 	MEM_BROM brom (
-		.clk       			(s_sys_clk),
-		.rst_n     			(n_rst),
+		.clk       			(s_clk_sys),
+		.rst_n     			(~s_rst_rom),
 		.i_wb_cyc	 		(s_wb_brom_cyc),
 		.i_wb_stb	 		(s_wb_brom_stb),
 		.i_wb_we	 	 		(s_wb_brom_we),
@@ -284,10 +287,10 @@ module top (
 		.o_wb_ack	 		(s_wb_brom_ack),
 		.o_wb_data	 		(s_wb_brom_data_i),
 	);
-	
+
 	Peripherals mmap (
-		.clk       			(s_sys_clk),
-		.rst_n      		(n_rst),
+		.clk       			(s_clk_sys),
+		.rst_n      		(s_nrst),
 		.i_wb_cyc	 		(s_wb_mmap_cyc),
 		.i_wb_stb	 		(s_wb_mmap_stb),
 		.i_wb_we	 	 		(s_wb_mmap_we),
@@ -320,9 +323,9 @@ module top (
 		.o_irq 				(s_irq),
 		.i_eoi 				(s_eoi)
 	);
-	
+
 	wbsdram sdram_ctrl (
-		.i_clk				(s_sys_clk),
+		.i_clk				(s_clk_sys),
 		.i_wb_cyc			(s_wb_sdram_cyc),
 		.i_wb_stb			(s_wb_sdram_stb),
 		.i_wb_we				(s_wb_sdram_we),
@@ -349,22 +352,19 @@ module top (
 	sdram_pll pll1 (
 		.areset				(i_rst),
 		.inclk0				(i_clk),
-		.c0					(s_sys_clk),
-		.c1					(s_sdram_clk),
-		.locked				(n_rst)
+		.c0					(s_clk_sys),
+		.c1					(s_clk_sdram),
+		.locked				(s_nrst)
 	);
-	
-	
-	always @(posedge s_sys_clk or negedge n_rst) begin
-		if (~n_rst) begin
-			  rst_proc <= 1'b 1;
-		end else if (s_sys_clk) begin
-//			if (~i_serial_ndtr && ~i_serial_nrts) begin
-//				rst_proc <= 1'b 1;
-//			end else if (rst_proc) begin
-				rst_proc <= 1'b 0;
-//			end
-		end
-	end
+
+	Reset_handler reset (
+		.i_clk 				(i_clk),
+		.i_nrst				(s_nrst),
+		.i_serial_ndtr		(i_serial_ndtr),
+		.i_serial_nrts		(i_serial_nrts),
+		.o_rst_proc			(s_rst_proc),
+		.o_rst_rom			(s_rst_rom),
+		.o_rst_ram			(s_rst_ram)
+	);
 
 endmodule

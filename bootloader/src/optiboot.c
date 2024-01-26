@@ -1,6 +1,24 @@
 #include "../include/optiboot.h"
 #include "../include/memory.h"
 
+static u64 time_start_millis;
+static bool timeout_enabled;
+
+void sleep(const u64 interval_ms) {
+  const u64 start = __counter_millis;
+  while (__counter_millis - start < interval_ms)
+    ;
+}
+
+void flash_led(const usize count) {
+  for (usize i = 0; i < count; ++i) {
+    __gpio_led = 1;
+    sleep(LED_FLASH_INTERVAL);
+    __gpio_led = 0;
+    sleep(LED_FLASH_INTERVAL);
+  }
+}
+
 void put_ch(const char character) {
   while (!__uart0_tx_ready)
     ;
@@ -8,8 +26,13 @@ void put_ch(const char character) {
 }
 
 char get_ch(void) {
-  while (!__uart0_rx_ready)
-    ;
+  while (!__uart0_rx_ready) {
+    if (timeout_enabled && __counter_millis - time_start_millis >= TIMEOUT_MS) {
+      flash_led(LED_FLASH_COUNT_TIMEOUT);
+      __exit();
+    }
+  }
+  timeout_enabled = false;
   return __uart0_rx;
 }
 
@@ -54,21 +77,6 @@ void put_num(const usize number, const usize base) {
   }
   buffer[d] = '\0';
   put_dbg(buffer);
-}
-
-void sleep(const u64 interval_ms) {
-  const u64 start = __counter_millis;
-  while (__counter_millis - start < interval_ms)
-    ;
-}
-
-void flash_led(void) {
-  for (usize i = 0; i < LED_FLASH_COUNT; ++i) {
-    __gpio_led = 1;
-    sleep(LED_FLASH_INTERVAL);
-    __gpio_led = 0;
-    sleep(LED_FLASH_INTERVAL);
-  }
 }
 
 u8 get_length(void) {
@@ -160,7 +168,9 @@ void stk_read_sign(void) {
 }
 
 void optiboot(void) {
-  flash_led();
+  flash_led(LED_FLASH_COUNT_START);
+  time_start_millis = __counter_millis;
+  timeout_enabled = true;
   put_dbg("\n\nOptiboot started after ");
   put_num((usize)__counter_millis, 10);
   put_dbg(" ms.\n");
@@ -183,6 +193,7 @@ void optiboot(void) {
       verify_space();
       put_ch(STK_OK);
       put_dbg("STK_LEAVE_PROGMODE\n");
+      flash_led(LED_FLASH_COUNT_DONE);
       return;
     case STK_LOAD_ADDRESS:
       stk_load_address(&address);

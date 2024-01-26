@@ -246,8 +246,8 @@ begin
 	-- UART --
 	----------
 
-	o_sem(1) <= s_uart0_rx_ready;
-	o_sem(0) <= s_uart0_tx_ready;
+	o_sem(1) <= not i_uart0_nrts;
+	o_sem(0) <= not i_uart0_ndtr;
 
 	--o_led <= not i_uart0_nrts & not i_uart0_ndtr & "0000" & not s_uart0_ndsr & not s_uart0_ncts;
 

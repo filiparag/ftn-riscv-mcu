@@ -30,4 +30,5 @@ extern volatile u64 __counter_millis;
 extern volatile u8 __gpio_led;
 extern volatile u32 __gpio_7segm;
 
-void init_ram(void);
+void zero_init_bram(void);
+void zero_init_sdram(void);
