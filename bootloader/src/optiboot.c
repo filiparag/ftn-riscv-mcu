@@ -25,16 +25,7 @@ void put_ch(const char character) {
   __uart0_tx = character;
 }
 
-char get_ch(void) {
-  while (!__uart0_rx_ready) {
-    if (timeout_enabled && __counter_millis - time_start_millis >= TIMEOUT_MS) {
-      flash_led(LED_FLASH_COUNT_TIMEOUT);
-      __exit();
-    }
-  }
-  timeout_enabled = false;
-  return __uart0_rx;
-}
+#ifdef DEBUG_OVER_UART1
 
 void put_dbg(const char *const buffer) {
   char *character = (char *)buffer;
@@ -46,7 +37,7 @@ void put_dbg(const char *const buffer) {
   }
 }
 
-void put_num(const usize number, const usize base) {
+void put_dbg_num(const usize number, const usize base) {
   char buffer[32];
   usize n = number;
   usize d = 0;
@@ -77,6 +68,24 @@ void put_num(const usize number, const usize base) {
   }
   buffer[d] = '\0';
   put_dbg(buffer);
+}
+
+#endif
+
+char get_ch(void) {
+  while (!__uart0_rx_ready) {
+    if (timeout_enabled && __counter_millis - time_start_millis >= TIMEOUT_MS) {
+#ifdef DEBUG_OVER_UART1
+      put_dbg("\nOptiboot timeout at ");
+      put_dbg_num((usize)__counter_millis, 10);
+      put_dbg(" ms.\n");
+#endif
+      flash_led(LED_FLASH_COUNT_TIMEOUT);
+      __exit();
+    }
+  }
+  timeout_enabled = false;
+  return __uart0_rx;
 }
 
 u8 get_length(void) {
@@ -128,22 +137,27 @@ void stk_univeral(void) {
 }
 
 void stk_prog_page(const u16 address) {
+  const usize page_start = address << 1;
+#ifdef DEBUG_OVER_UART1
+  put_dbg("Page start: ");
+  put_dbg_num(page_start, 16);
+  put_dbg("\n");
+#endif
   u8 length = get_length();
   get_ch(); // desttype
   volatile char *const bram = (char *)&__fw_start;
-  const usize page_start = address << 1;
-  put_dbg("Page start: ");
-  put_num(page_start, 16);
-  put_dbg("\n");
   for (usize byte = 0; byte < length; ++byte) {
     const usize offset = page_start + byte;
-    *(bram + offset) = get_ch();
-    put_num(*(bram + offset), 16);
+    const u8 value = get_ch();
+    *(bram + offset) = value;
+#ifdef DEBUG_OVER_UART1
+    put_dbg_num(value, 16);
     if (byte > 0 && byte % 4 == 3) {
       put_dbg("\n");
     } else {
       put_dbg(" ");
     }
+#endif
   }
   verify_space();
 }
@@ -171,59 +185,81 @@ void optiboot(void) {
   flash_led(LED_FLASH_COUNT_START);
   time_start_millis = __counter_millis;
   timeout_enabled = true;
-  put_dbg("\n\nOptiboot started after ");
-  put_num((usize)__counter_millis, 10);
+#ifdef DEBUG_OVER_UART1
+  put_dbg("\n\nOptiboot started at ");
+  put_dbg_num((usize)__counter_millis, 10);
   put_dbg(" ms.\n");
+#endif
   u16 address;
   for (;;) {
     switch (get_ch()) {
     case STK_GET_PARAMETER:
       stk_get_parameter();
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_GET_PARAMETER\n");
+#endif
       break;
     case STK_SET_DEVICE:
       get_n_ch(20);
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_SET_DEVICE\n");
+#endif
       break;
     case STK_SET_DEVICE_EXT:
       get_n_ch(5);
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_SET_DEVICE_EXT\n");
+#endif
       break;
     case STK_LEAVE_PROGMODE:
       verify_space();
       put_ch(STK_OK);
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_LEAVE_PROGMODE\n");
+#endif
       flash_led(LED_FLASH_COUNT_DONE);
       return;
     case STK_LOAD_ADDRESS:
       stk_load_address(&address);
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_LOAD_ADDRESS ");
-      put_num(address, 16);
+      put_dbg_num(address, 16);
       put_dbg("\n");
+#endif
       break;
     case STK_UNIVERSAL:
       stk_univeral();
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_UNIVERSAL\n");
+#endif
       break;
     case STK_PROG_PAGE:
       stk_prog_page(address);
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_PROG_PAGE ");
-      put_num(address, 16);
+      put_dbg_num(address, 16);
       put_dbg("\n");
+#endif
       break;
     case STK_READ_PAGE:
       stk_read_page(address);
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_READ_PAGE ");
-      put_num(address, 16);
+      put_dbg_num(address, 16);
       put_dbg("\n");
+#endif
       break;
     case STK_READ_SIGN:
       stk_read_sign();
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_READ_SIGN\n");
+#endif
       break;
     default:
       verify_space();
+#ifdef DEBUG_OVER_UART1
       put_dbg("STK_DEFAULT\n");
+#endif
     }
     put_ch(STK_OK);
   }
