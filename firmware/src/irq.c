@@ -19,7 +19,6 @@ void irq_set_handler(const enum IRQ irq, const irq_fn handler) {
 }
 
 void __irq_init(void) {
-  __gpio_7segm_hex = 0xb005;
   for (usize i = 0; i < IRQ_COUNT; ++i) {
     irq_vector[i] = IRQ_UNSET;
   }

@@ -16,7 +16,6 @@ void put_ch(const enum UART_PORT port, const char character) {
 }
 
 char get_ch(const enum UART_PORT port) {
-
   switch (port) {
   case UART0:
     while (!__uart0_rx_ready)

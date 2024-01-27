@@ -1,46 +1,61 @@
 .PRECIOUS: build/%.elf
 
-MAKEFLAGS 	+= --silent
+COMMON_DIR	:= $(dir $(lastword $(MAKEFILE_LIST)))
+include ${COMMON_DIR}/toolchain.mk
 
-RV32_TOOLCHAIN	?= /opt/riscv/bin/riscv32-unknown-elf-
-RV32_ARCH	?= rv32im
-E2X_TOOLCHAIN	?= /opt/elf2hex/
+MAKEFLAGS 	+= --silent
+TOOLCHAIN	:= ${RV32_TOOLCHAIN}/${RV32_TARGET}-
 
 clean:
-	find build -type f -not -name '.gitignore' -exec rm {} \;
+	find ${CURDIR}/build -type f -not -name '.gitignore' -exec rm {} \;
 
 build/%.c.o: ./src/%.c
-	${RV32_TOOLCHAIN}gcc \
+	${TOOLCHAIN}gcc \
 		-Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
 
 build/%.S.o: ./src/%.S
-	${RV32_TOOLCHAIN}gcc \
+	${TOOLCHAIN}gcc \
 		-Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
 
 build/%.elf: ./${LINKER_SCRIPT} \
-	$(shell find src -type f \( -name '*.c' -o -name '*.S' \) -printf 'build/%P.o\n')
-	${RV32_TOOLCHAIN}gcc \
+	$(shell find ${CURDIR}/src -type f \( -name '*.c' -o -name '*.S' \) -printf 'build/%P.o\n')
+ifdef INCLUDE_LIBS
+	find ${CURDIR}/lib/newlib/${RV32_TARGET}/${RV32_ARCH}/*/newlib \
+	  	-type f -name '*.a' \
+	 	-exec cp -f {} ${CURDIR}/build \;
+	${TOOLCHAIN}gcc \
 		-Wall -nostdlib -march=${RV32_ARCH} \
-		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,build/fw_playground.map \
+		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,${CURDIR}/build/fw_playground.map \
 		-Wl,-Bdynamic \
-		build/**.o -o $@
+		${CURDIR}/build/**.o \
+		${CURDIR}/build/**.a \
+		-lc -lgcc -o $@
+else
+	${TOOLCHAIN}gcc \
+		-Wall -nostdlib -march=${RV32_ARCH} \
+		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,${CURDIR}/build/fw_playground.map \
+		-Wl,-Bdynamic \
+		${CURDIR}/build/**.o \
+		-o $@
+endif
 
 build/%.bin: build/%.elf
-	${RV32_TOOLCHAIN}objcopy -O binary $^ $@
+	${TOOLCHAIN}objcopy -O binary $^ $@
 
 build/%.lst: build/%.elf
-	${RV32_TOOLCHAIN}objdump -S $^ > $@
+	${TOOLCHAIN}objdump -S $^ > $@
 
 build/%.intel.hex: build/%.elf
-	${RV32_TOOLCHAIN}objcopy -O ihex $^ $@
+	${TOOLCHAIN}objcopy -O ihex $^ $@
 
 build/%.plain.hex: build/%.elf
-	${E2X_TOOLCHAIN}elf2hex \
+	${E2X_TOOLCHAIN}/elf2hex \
 		--bit-width 32 \
 		--input $^ \
 		--output $@
 
 build/%.quartus.hex: build/%.plain.hex
-	awk -f ../common/scripts/quartus_ihex.awk $^ > $@
+	awk -f ${COMMON_DIR}/scripts/quartus_ihex.awk $^ > $@
+

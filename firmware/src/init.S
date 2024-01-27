@@ -6,11 +6,13 @@
 .global __irq_mask
 .global __irq_wait
 .global __init
+.global __exit
 .type __reset @function
 .type __irq_handler @function
 .type __irq_mask @function
 .type __irq_wait @function
 .type __init @function
+.type __exit @function
 
 __reset:
 
@@ -223,6 +225,19 @@ __init:
 	addi    sp, sp, %lo(__stack_start)
 
 	call	__irq_init
+
+	li		a0, 0xb005
+	call	debug
+
+	call	__libc_init_array
+
+	li		a0, 0xb006
+	call	debug
+
     j       main
 
     ebreak
+
+__exit:
+
+	j		__reset
