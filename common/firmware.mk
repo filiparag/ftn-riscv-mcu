@@ -4,14 +4,19 @@ COMMON_DIR	:= $(dir $(lastword $(MAKEFILE_LIST)))
 include ${COMMON_DIR}/toolchain.mk
 
 MAKEFLAGS 	+= --silent
-TOOLCHAIN	:= ${RV32_TOOLCHAIN}/${RV32_TARGET}-
+TOOLCHAIN	:= ${RV32_TOOLCHAIN}/bin/${RV32_TARGET}-
 
 clean:
 	find ${CURDIR}/build -type f -not -name '.gitignore' -exec rm {} \;
 
 build/%.c.o: ./src/%.c
 	${TOOLCHAIN}gcc \
-		-Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
+		-std=c17 -Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
+		$^ -c -o $@
+
+build/%.cpp.o: ./src/%.cpp
+	${TOOLCHAIN}gcc \
+		-std=c++2b -Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
 
 build/%.S.o: ./src/%.S
@@ -20,9 +25,9 @@ build/%.S.o: ./src/%.S
 		$^ -c -o $@
 
 build/%.elf: ./${LINKER_SCRIPT} \
-	$(shell find ${CURDIR}/src -type f \( -name '*.c' -o -name '*.S' \) -printf 'build/%P.o\n')
+	$(shell find ${CURDIR}/src -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.S' \) -printf 'build/%P.o\n')
 ifdef INCLUDE_LIBS
-	find ${CURDIR}/lib/newlib/${RV32_TARGET}/${RV32_ARCH}/*/newlib \
+	find ${CURDIR}/lib/newlib/${RV32_TARGET}/newlib \
 	  	-type f -name '*.a' \
 	 	-exec cp -f {} ${CURDIR}/build \;
 	${TOOLCHAIN}gcc \
@@ -51,7 +56,7 @@ build/%.intel.hex: build/%.elf
 	${TOOLCHAIN}objcopy -O ihex $^ $@
 
 build/%.plain.hex: build/%.elf
-	${E2X_TOOLCHAIN}/elf2hex \
+	${E2X_TOOLCHAIN}/bin/${RV32_TARGET}-elf2hex \
 		--bit-width 32 \
 		--input $^ \
 		--output $@

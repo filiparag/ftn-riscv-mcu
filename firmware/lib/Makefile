@@ -4,7 +4,7 @@ include ../../common/toolchain.mk
 
 CFLAGS		+= -DPREFER_SIZE_OVER_SPEED=1 -Os
 MAKEFLAGS 	+= --silent
-PATH		:= ${RV32_TOOLCHAIN}:${PATH}
+PATH		:= ${RV32_TOOLCHAIN}/bin:${PATH}
 
 NEWLIB_VERSION	= 4.4.0.20231231
 
@@ -18,7 +18,7 @@ download:
 build:
 	mkdir -p ${CURDIR}/newlib
 	cd ${CURDIR}/newlib && \
-		${CURDIR}/newlib-4.4.0.20231231/configure \
+		${CURDIR}/newlib-${NEWLIB_VERSION}/configure \
 			--target=riscv32-unknown-elf \
 			--enable-newlib-io-pos-args \
 			--enable-newlib-io-c99-formats \
@@ -34,6 +34,9 @@ build:
 			--disable-newlib-supplied-syscalls
 	cd ${CURDIR}/newlib && \
 		make -j$(nproc)
+
+clean-sources:
+	rm -rf ${CURDIR}/newlib-${NEWLIB_VERSION}
 
 clean:
 	rm -rf ${CURDIR}/newlib
