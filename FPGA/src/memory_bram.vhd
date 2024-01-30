@@ -46,7 +46,7 @@ begin
 		byte_size => 8,
 		clock_enable_input_a => "BYPASS",
 		clock_enable_output_a => "BYPASS",
-		init_file => "../firmware/build/firmware.quartus.hex",
+		--init_file => "../firmware/build/firmware.quartus.hex",
 		intended_device_family => "MAX 10",
 		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME=BRAM",
 		lpm_type => "altsyncram",
