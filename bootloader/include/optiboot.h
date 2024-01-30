@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stk500.h"
-#include "types.h"
+#include <stk500.h>
+#include <types.h>
 
 extern void __exit(void);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include <types.h>
 
 enum TIMER {
   TIMER0 = 0b00,

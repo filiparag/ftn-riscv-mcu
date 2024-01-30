@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include <types.h>
 
 extern const volatile bool __uart0_rx_ready;
 extern const volatile bool __uart0_tx_ready;

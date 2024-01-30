@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types.h"
-#include "uart.h"
+#include <types.h>
+#include <uart.h>
 
 #define DISP_ROWS 8
 #define DISP_COLS 8

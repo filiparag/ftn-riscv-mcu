@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include <types.h>
 
 /* Firmware memory region */
 extern const usize __fw_start;

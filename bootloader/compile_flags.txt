@@ -1,0 +1,5 @@
+-std=c++2b
+-std=c17
+-Iinclude/
+-I../common/tools/gnu_toolchain/include/
+-I../common/tools/gnu_toolchain/riscv32-unknown-elf/include/

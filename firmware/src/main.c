@@ -1,19 +1,19 @@
 #include <stdio.h>
 
-#include "../include/gpio.h"
-#include "../include/time.h"
+#include <gpio.h>
+#include <time.h>
 
 extern void __libc_init_array(void);
-extern const usize __sdram_start;
 
 int main(void) {
+  printf("Hello world!\n");
   usize ls = 0;
   for (;;) {
     const usize t = millis();
     const usize s = t >> 10;
     if (ls != s) {
-      printf("Runtime = %4i seconds\n", s);
       ls = s;
+      printf("Runtime is %4lu seconds...\n", s);
     }
     set_hex(s);
     for (usize c = 0; c < 8; ++c) {
