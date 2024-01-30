@@ -24,18 +24,12 @@ __reset:
 	lui     sp, %hi(__stack_start)
 	addi    sp, sp, %lo(__stack_start)
 
-	li		a0, 0xb001
-	call	debug
-
     /* set global pointer */
 
 .option push
 .option norelax
     la      gp, __global_pointer
 .option pop
-
-	li		a0, 0xb002
-	call	debug
 
     /* clear .bss and .sbss */
 
@@ -48,10 +42,9 @@ clear_bss:
 	beq		x0, x0, clear_bss
 done_bss:
 
-	li		a0, 0xb003
-	call	debug
-
     j       __init
+
+	ebreak
 
 __irq_handler:
 
@@ -103,9 +96,6 @@ __irq_handler:
 	sw      x31, 31*4(x1)
 
     /* call interrupt handler C function */
-
-	lui     sp, %hi(irq_stack_start)
-	addi    sp, sp, %lo(irq_stack_start)
 
     picorv32_getq_insn(a0, q1) // arg1 = interrupt type
 
@@ -162,15 +152,6 @@ __irq_handler:
 
 irq_regs:
     .fill   32, 4
-irq_stack_end:
-    .fill   256, 4
-irq_stack_start:
-
-debug:
-
-	li      a5, 0x8000
-	sw      a0, 4(a5)
-	ret
 
 __irq_mask:
 
@@ -184,55 +165,11 @@ __irq_wait:
 
 __init:
 
-	li		a0, 0xb004
-	call	debug
-
-	/* zero-initialize all registers */
-
-	addi 	x1, zero, 0
-	addi 	x2, zero, 0
-	addi 	x3, zero, 0
-	addi 	x4, zero, 0
-	addi 	x5, zero, 0
-	addi 	x6, zero, 0
-	addi 	x7, zero, 0
-	addi 	x8, zero, 0
-	addi 	x9, zero, 0
-	addi 	x10, zero, 0
-	addi 	x11, zero, 0
-	addi 	x12, zero, 0
-	addi 	x13, zero, 0
-	addi 	x14, zero, 0
-	addi 	x15, zero, 0
-	addi 	x16, zero, 0
-	addi 	x17, zero, 0
-	addi 	x18, zero, 0
-	addi 	x19, zero, 0
-	addi 	x20, zero, 0
-	addi 	x21, zero, 0
-	addi 	x22, zero, 0
-	addi 	x23, zero, 0
-	addi 	x24, zero, 0
-	addi 	x25, zero, 0
-	addi 	x26, zero, 0
-	addi 	x27, zero, 0
-	addi 	x28, zero, 0
-	addi 	x29, zero, 0
-	addi 	x30, zero, 0
-	addi 	x31, zero, 0
-
     lui     sp, %hi(__stack_start)
 	addi    sp, sp, %lo(__stack_start)
 
 	call	__irq_init
-
-	li		a0, 0xb005
-	call	debug
-
 	call	__libc_init_array
-
-	li		a0, 0xb006
-	call	debug
 
     j       main
 

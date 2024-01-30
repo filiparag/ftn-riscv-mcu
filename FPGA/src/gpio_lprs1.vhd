@@ -17,7 +17,6 @@ entity LPRS1_Board_GPIO is
 		i_disp_data : in std_logic_vector(31 downto 0);
 		i_disp_pos : in std_logic_vector(31 downto 0);
 		o_7segm_fb	: out std_logic_vector(31 downto 0);
-		o_sem : out std_logic_vector(2 downto 0);
 		o_row_digit : out std_logic_vector(2 downto 0);
 		o_col_7segm : out std_logic_vector(7 downto 0);
 		o_color_7segm : out std_logic_vector(1 downto 0);
@@ -73,8 +72,6 @@ begin
 			s_sw <= i_sw;
 		end if;
 	end process;
-
-	o_sem <= "111";
 
 	output_mux : process(clk, rst_n)
 	begin

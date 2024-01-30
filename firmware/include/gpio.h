@@ -14,7 +14,7 @@ struct PIXEL {
 
 extern const volatile u16 __gpio_btn_sw;
 
-extern volatile u8 __gpio_led;
+extern volatile u16 __gpio_led_sem;
 
 extern volatile u16 __gpio_7segm_hex;
 extern volatile u32 __gpio_7segm;
@@ -26,6 +26,12 @@ enum DIGITAL_STATE {
   HIGH = 1,
 };
 
+enum SEMAPHORE {
+  SEM_RED = 1 << 10,
+  SEM_YELLOW = 1 << 9,
+  SEM_GREEN = 1 << 8,
+};
+
 enum BUTTON {
   BTN_UP = 0b1,
   BTN_DOWN = 0b10,
@@ -35,6 +41,7 @@ enum BUTTON {
 };
 
 void set_led(const usize index, const enum DIGITAL_STATE state);
+void set_sem(const enum SEMAPHORE color, const enum DIGITAL_STATE state);
 
 void set_hex(const u16 value);
 void set_7segm(const u32 value);

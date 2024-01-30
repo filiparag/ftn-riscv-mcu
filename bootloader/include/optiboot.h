@@ -19,8 +19,11 @@ extern void __exit(void);
 #define LED_FLASH_COUNT_START 2
 #define LED_FLASH_COUNT_DONE 3
 #define LED_FLASH_COUNT_TIMEOUT 1
-#define LED_FLASH_INTERVAL 150
+#define LED_FLASH_INTERVAL 30
 
-#define TIMEOUT_MS 2500
+#define HEX_BOOT 0b00011111011111100111111000001111
+#define HEX_EMPTY 0
+
+#define TIMEOUT_MS 250
 
 void optiboot(void);

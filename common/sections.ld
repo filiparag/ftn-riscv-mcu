@@ -18,7 +18,7 @@ SECTIONS {
 	.mmap 0x0C000 : {
 		. = ALIGN(4);
 		__mmap_start = . ;
-		__gpio_led = . + 0x0000;
+		__gpio_led_sem = . + 0x0000;
 		__counter_nanos = . + 0x0004;
 		__counter_micros = . + 0x000C;
 		__counter_millis = . + 0x0014;

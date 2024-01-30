@@ -1,4 +1,4 @@
-#include "../include/time.h"
+#include <time.h>
 
 u64 millis(void) { return __counter_millis; }
 

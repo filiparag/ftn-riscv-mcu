@@ -31,18 +31,15 @@ ifdef INCLUDE_LIBS
 	  	-type f -name '*.a' \
 	 	-exec cp -f {} ${CURDIR}/build \;
 	${TOOLCHAIN}gcc \
-		-Wall -nostdlib -march=${RV32_ARCH} \
+		-Os -Wall -nostdlib -march=${RV32_ARCH} \
 		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,${CURDIR}/build/fw_playground.map \
-		-Wl,-Bdynamic \
-		${CURDIR}/build/**.o \
-		${CURDIR}/build/**.a \
-		-lc -lgcc -o $@
+		-Wl,-Bdynamic ${CURDIR}/build/**.o ${CURDIR}/build/**.a -lm -lc -lgcc \
+		-o $@
 else
 	${TOOLCHAIN}gcc \
-		-Wall -nostdlib -march=${RV32_ARCH} \
+		-Os -Wall -nostdlib -march=${RV32_ARCH} \
 		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,${CURDIR}/build/fw_playground.map \
-		-Wl,-Bdynamic \
-		${CURDIR}/build/**.o \
+		-Wl,-Bdynamic ${CURDIR}/build/**.o \
 		-o $@
 endif
 

@@ -1,7 +1,14 @@
-#include "../include/gpio.h"
+#include <gpio.h>
 
 void set_led(const usize index, const enum DIGITAL_STATE state) {
-  __gpio_led &= 1 << index;
+  if (index < 8) {
+    const u16 mask = 1 << index;
+    __gpio_led_sem = (__gpio_led_sem & ~mask) | ((state == HIGH) << index);
+  }
+}
+
+void set_sem(const enum SEMAPHORE color, const enum DIGITAL_STATE state) {
+  __gpio_led_sem = (__gpio_led_sem & ~color) | ((state == HIGH) ? color : 0);
 }
 
 void set_hex(const u16 value) { __gpio_7segm_hex = value; }

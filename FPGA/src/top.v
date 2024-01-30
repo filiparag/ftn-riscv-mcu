@@ -176,7 +176,7 @@ module top (
 		.ENABLE_IRQ			(1),
 		.MASKED_IRQ			(32'h 0000_0000), // Enable all
 		.LATCHED_IRQ		(32'h ffff_ffff), // Latch all
-		.PROGADDR_IRQ		(32'h 0001_0060) // BROM
+		.PROGADDR_IRQ		(32'h 0000_0040) // BRAM
 	) picorv32(
 		.wb_rst_i			(s_rst_proc),
 		.wb_clk_i			(s_clk_sys),
@@ -290,7 +290,7 @@ module top (
 
 	Peripherals mmap (
 		.clk       			(s_clk_sys),
-		.rst_n      		(s_nrst),
+		.rst_n      		(~s_rst_proc),
 		.i_wb_cyc	 		(s_wb_mmap_cyc),
 		.i_wb_stb	 		(s_wb_mmap_stb),
 		.i_wb_we	 	 		(s_wb_mmap_we),

@@ -21,7 +21,6 @@ SECTIONS {
 		. = ALIGN(4);
 		*(.init)
 		__reset = 0x0;
-		__irq_handler = 0x60;
 		__text_start = . ;
 		*(.text)
 		*(.data)

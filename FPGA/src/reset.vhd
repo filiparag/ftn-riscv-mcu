@@ -25,7 +25,19 @@ begin
 	o_rst_rom <= '0';
 	o_rst_ram <= '0';
 	
-	s_rst_proc <= not i_nrst;
+	rst_proc : process(i_clk, i_nrst, i_serial_ndtr)
+	begin
+		if i_nrst = '0' then
+			s_rst_proc <= '1';
+		elsif rising_edge(i_clk) then
+			if	i_serial_ndtr = '0' and s_rst_proc = '0' then
+				s_rst_proc <= '1';
+			else
+				s_rst_proc <= '0';
+			end if;
+		end if;
+	end process;
+
 	o_rst_proc <=  s_rst_proc;
 
 end Behavioral;

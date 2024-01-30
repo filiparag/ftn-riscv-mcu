@@ -51,6 +51,7 @@ end Peripherals;
 architecture Behavioral of Peripherals is
 
 	signal s_led : std_logic_vector(7 downto 0);
+	signal s_sem : std_logic_vector(2 downto 0);
 
 	signal s_7segm : std_logic_vector(32 downto 0);
 	signal s_7segm_fb : std_logic_vector(31 downto 0);
@@ -106,7 +107,7 @@ architecture Behavioral of Peripherals is
 	---------------------------
 
 	-- MAX1000 board
-	constant ADDR_LED 			: integer := 16#0000#;	--   8bit rw LED
+	constant ADDR_LED_SEM		: integer := 16#0000#;	--  11bit rw LED and Semaphore
 
 	-- Internal counters
 	constant ADDR_COUNTER_NS	: integer := 16#0004#;	--  64bit ro Runtime counter (ns)
@@ -231,7 +232,6 @@ begin
 			i_disp_data		=> s_disp_data,
 			i_disp_pos		=> s_disp_pos,
 			o_7segm_fb		=> s_7segm_fb,
-			--o_sem				=> o_sem,
 			o_row_digit		=> o_mux_row_or_digit,
 			o_col_7segm		=> o_n_col_or_7segm,
 			o_color_7segm	=> o_mux_sel_color_or_7segm,
@@ -241,15 +241,11 @@ begin
 
 
 	o_led <= s_led;
+	o_sem <= s_sem;
 
 	----------
 	-- UART --
 	----------
-
-	o_sem(1) <= not i_uart0_nrts;
-	o_sem(0) <= not i_uart0_ndtr;
-
-	--o_led <= not i_uart0_nrts & not i_uart0_ndtr & "0000" & not s_uart0_ndsr & not s_uart0_ncts;
 
 	o_uart0_ndsr <= s_uart0_ndsr;
 	o_uart0_ncts <= s_uart0_ncts;
@@ -257,7 +253,7 @@ begin
 	----------------
 	-- Interrupts --
 	----------------
-
+	
 	s_irq(29 downto 6) <= (others => '0');
 	s_irq(4) <= s_uart0_rx_dv or s_uart1_rx_dv;
 	s_irq(5) <= s_uart0_tx_done or s_uart1_tx_done;
@@ -294,10 +290,12 @@ begin
 				s_uart0_tx_dv <= '0';
 				s_uart1_tx_dv <= '0';
 
-				-- LED
-				if i_wb_addr = ADDR_LED then
+				-- LED and Semaphore
+				if i_wb_addr = ADDR_LED_SEM then
 					s_led <= (i_wb_data(7 downto 0) and s_wb_sel_mask(7 downto 0)) or
 								(s_led and not s_wb_sel_mask(7 downto 0));
+					s_sem <= (i_wb_data(10 downto 8) and s_wb_sel_mask(10 downto 8)) or
+								(s_sem and not s_wb_sel_mask(10 downto 8));
 
 				-- 7segm hex
 				elsif i_wb_addr = ADDR_7SEGM_HEX then
@@ -372,9 +370,11 @@ begin
 
 			if i_wb_stb = '1' and i_wb_we = '0' then
 
-				 -- LED
-				if i_wb_addr = ADDR_LED then
+				 -- LED and Semaphore
+				if i_wb_addr = ADDR_LED_SEM then
 					o_wb_data(7 downto 0) <= s_led;
+					o_wb_data(10 downto 8) <= s_sem;
+					o_wb_data(31 downto 11) <= (others => '0');
 
 				-- 7segm
 				elsif i_wb_addr = ADDR_7SEGM or i_wb_addr = ADDR_7SEGM_HEX then

@@ -1,5 +1,5 @@
-#include "../include/optiboot.h"
-#include "../include/memory.h"
+#include <memory.h>
+#include <optiboot.h>
 
 static u64 time_start_millis;
 static bool timeout_enabled;
@@ -12,11 +12,17 @@ void sleep(const u64 interval_ms) {
 
 void flash_led(const usize count) {
   for (usize i = 0; i < count; ++i) {
-    __gpio_led = 1;
+    __gpio_led_sem = 1;
     sleep(LED_FLASH_INTERVAL);
-    __gpio_led = 0;
+    __gpio_led_sem = 0;
     sleep(LED_FLASH_INTERVAL);
   }
+}
+
+void exit_optiboot(void) {
+  flash_led(LED_FLASH_COUNT_TIMEOUT);
+  __gpio_7segm = HEX_EMPTY;
+  __exit();
 }
 
 void put_ch(const char character) {
@@ -80,8 +86,7 @@ char get_ch(void) {
       put_dbg_num((usize)__counter_millis, 10);
       put_dbg(" ms.\n");
 #endif
-      flash_led(LED_FLASH_COUNT_TIMEOUT);
-      __exit();
+      exit_optiboot();
     }
   }
   timeout_enabled = false;
@@ -182,6 +187,7 @@ void stk_read_sign(void) {
 }
 
 void optiboot(void) {
+  __gpio_7segm = HEX_BOOT;
   flash_led(LED_FLASH_COUNT_START);
   time_start_millis = __counter_millis;
   timeout_enabled = true;
@@ -217,7 +223,7 @@ void optiboot(void) {
 #ifdef DEBUG_OVER_UART1
       put_dbg("STK_LEAVE_PROGMODE\n");
 #endif
-      flash_led(LED_FLASH_COUNT_DONE);
+      exit_optiboot();
       return;
     case STK_LOAD_ADDRESS:
       stk_load_address(&address);

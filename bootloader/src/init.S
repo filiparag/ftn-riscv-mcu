@@ -3,12 +3,10 @@
 .section .init
 
 .global __reset
-.global __irq_handler
 .global __init
 .global __exit
 
 .type __reset @function
-.type __irq_handler @function
 .type __init @function
 .type __exit @function
 
@@ -30,10 +28,6 @@ __reset:
 .option pop
 
     j       __init
-
-__irq_handler:
-
-	j		__fw_irq_handler
 
 __init:
 

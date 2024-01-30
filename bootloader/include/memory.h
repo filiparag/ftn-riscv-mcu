@@ -27,7 +27,7 @@ extern volatile u64 __counter_micros;
 extern volatile u64 __counter_millis;
 
 /* GPIO */
-extern volatile u8 __gpio_led;
+extern volatile u16 __gpio_led_sem;
 extern volatile u32 __gpio_7segm;
 
 void zero_init_bram(void);

@@ -1,7 +1,7 @@
 #include <sys/stat.h>
 
-#include "../include/types.h"
-#include "../include/uart.h"
+#include <types.h>
+#include <uart.h>
 
 extern void __exit(void) __attribute__((noreturn));
 
