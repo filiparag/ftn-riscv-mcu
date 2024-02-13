@@ -28,17 +28,17 @@ entity MEM_BRAM is
 end MEM_BRAM;
 
 architecture Behavioral of MEM_BRAM is
-	
+
 	constant c_ram_addr_len : positive := positive(ceil(log2(real(g_RAM_SIZE))));
-	
+
 	signal s_wb_ack : std_logic;
 	signal s_wb_stall : std_logic;
-	
+
 	signal s_ram_wren : std_logic;
 	signal s_ram_rden : std_logic;
 	signal s_ram_addr : std_logic_vector(c_ram_addr_len - 1 downto 0);
 	signal s_ram_data : std_logic_vector(31 downto 0);
-	
+
 begin
 
 	altsyncram_component : altsyncram
@@ -46,7 +46,6 @@ begin
 		byte_size => 8,
 		clock_enable_input_a => "BYPASS",
 		clock_enable_output_a => "BYPASS",
-		--init_file => "../firmware/build/firmware.quartus.hex",
 		intended_device_family => "MAX 10",
 		lpm_hint => "ENABLE_RUNTIME_MOD=YES,INSTANCE_NAME=BRAM",
 		lpm_type => "altsyncram",
@@ -54,7 +53,7 @@ begin
 		operation_mode => "SINGLE_PORT",
 		outdata_aclr_a => "NONE",
 		outdata_reg_a => "UNREGISTERED",
-		power_up_uninitialized => "FALSE",
+		power_up_uninitialized => "TRUE",
 		ram_block_type => "M9K",
 		read_during_write_mode_port_a => "NEW_DATA_NO_NBE_READ",
 		widthad_a => c_ram_addr_len,
@@ -73,7 +72,7 @@ begin
 
 	s_ram_wren <= '1' when i_wb_stb = '1' and i_wb_we = '1' else '0';
 	s_ram_rden <= '1' when i_wb_stb = '1' and i_wb_we = '0' else '0';
-	
+
 	s_ram_addr <= i_wb_addr(c_ram_addr_len - 1 + 2 downto 2) when i_wb_addr < g_RAM_SIZE * 4 else
 					  (others => '0');
 

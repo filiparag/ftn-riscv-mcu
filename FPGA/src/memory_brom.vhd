@@ -23,10 +23,7 @@ entity MEM_BROM is
 		i_wb_sel : in std_logic_vector(3 downto 0);
 		o_wb_stall : out std_logic;
 		o_wb_ack : out std_logic;
-		o_wb_data : out std_logic_vector(31 downto 0);
-
-		-- LEDs
-		o_led : out std_logic_vector(7 downto 0)
+		o_wb_data : out std_logic_vector(31 downto 0)
 	);
 end MEM_BROM;
 
@@ -56,6 +53,7 @@ begin
 		operation_mode => "ROM",
 		outdata_aclr_a => "NONE",
 		outdata_reg_a => "UNREGISTERED",
+		ram_block_type => "M9K",
 		widthad_a => c_rom_addr_len,
 		width_a => 32,
 		width_byteena_a => 1
