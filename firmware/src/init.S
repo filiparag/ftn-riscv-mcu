@@ -5,12 +5,14 @@
 .global __irq_handler
 .global __irq_mask
 .global __irq_wait
+.global __ecall
 .global __init
 .global __exit
 .type __reset @function
 .type __irq_handler @function
 .type __irq_mask @function
 .type __irq_wait @function
+.type __ecall @function
 .type __init @function
 .type __exit @function
 
@@ -97,7 +99,10 @@ __irq_handler:
 
     /* call interrupt handler C function */
 
-    picorv32_getq_insn(a0, q1) // arg1 = interrupt type
+    picorv32_getq_insn(a0, q1) // a0 = interrupt type
+
+    lui     a1, %hi(irq_regs) // a1 = register dump
+    addi    a1, a1, %lo(irq_regs)
 
     call	__isr // call to C function
 
@@ -161,6 +166,11 @@ __irq_mask:
 __irq_wait:
 
     picorv32_waitirq_insn(a0)
+    ret
+
+__ecall:
+
+    ecall
     ret
 
 __init:

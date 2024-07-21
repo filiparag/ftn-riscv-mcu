@@ -139,12 +139,12 @@ architecture Behavioral of Peripherals is
 	-- Interrupt register bitmap --
 	-------------------------------
 
-	constant IRQ_TIMER0			: integer := 0;	--   Timer 0 interval has elapsed
-	constant IRQ_TIMER1			: integer := 1;	--   Timer 1 interval has elapsed
-	constant IRQ_TIMER2			: integer := 2;	--   Timer 2 interval has elapsed
-	constant IRQ_TIMER3			: integer := 3;	--   Timer 3 interval has elapsed
-	constant IRQ_UART_RX			: integer := 4;	--   UART byte received
-	constant IRQ_UART_TX			: integer := 5;	--   UART byte transmitted
+	constant IRQ_TIMER0			: integer := 4;	--   Timer 0 interval has elapsed
+	constant IRQ_TIMER1			: integer := 5;	--   Timer 1 interval has elapsed
+	constant IRQ_TIMER2			: integer := 6;	--   Timer 2 interval has elapsed
+	constant IRQ_TIMER3			: integer := 7;	--   Timer 3 interval has elapsed
+	constant IRQ_UART_RX			: integer := 8;	--   UART byte received
+	constant IRQ_UART_TX			: integer := 9;	--   UART byte transmitted
 	constant IRQ_BTN				: integer := 30;	--   Button interaction event
 	constant IRQ_SW				: integer := 31;	--   Switch interaction event
 
@@ -254,9 +254,12 @@ begin
 	-- Interrupts --
 	----------------
 	
-	s_irq(29 downto 6) <= (others => '0');
-	s_irq(4) <= s_uart0_rx_dv or s_uart1_rx_dv;
-	s_irq(5) <= s_uart0_tx_done or s_uart1_tx_done;
+	s_irq(3 downto 0) <= (others => '0'); -- internal
+	s_irq(29 downto 10) <= (others => '0'); -- unused
+	
+	s_irq(IRQ_UART_RX) <= s_uart0_rx_dv or s_uart1_rx_dv;
+	s_irq(IRQ_UART_TX) <= s_uart0_tx_done or s_uart1_tx_done;
+	
 	o_irq <= s_irq;
 
 	------------------

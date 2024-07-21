@@ -1,10 +1,11 @@
 #include <stdio.h>
 
 #include <gpio.h>
+#include <init.h>
 #include <irq.h>
 #include <time.h>
 
-void redraw_led_matrix(const usize irq) {
+void redraw_led_matrix(const usize irq, union StackFrame *const stack_frame) {
   const usize t = millis();
   for (usize c = 0; c < 8; ++c) {
     for (usize r = 0; r < 8; ++r) {
@@ -15,7 +16,7 @@ void redraw_led_matrix(const usize irq) {
   }
 }
 
-void update_counter(const usize irq) {
+void update_counter(const usize irq, union StackFrame *const stack_frame) {
   static u64 debounce = 0;
   static bool running = true;
   static usize counter = 1;
@@ -37,7 +38,7 @@ void update_counter(const usize irq) {
   set_led(0, running);
 }
 
-void semaphore(const usize irq) {
+void semaphore(const usize irq, union StackFrame *const stack_frame) {
   static u8 state = 0;
   switch (state) {
   case 0:
