@@ -179,6 +179,7 @@ __init:
     addi    sp, sp, %lo(__stack_start)
 
     call	__irq_init
+    call    __libc_init_brk
     call	__libc_init_array
 
     call       main

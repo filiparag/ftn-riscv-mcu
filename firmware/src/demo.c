@@ -81,6 +81,6 @@ void setup(void) {
 void loop(void) {
   const usize s = millis() / 1000;
   const usize ms = millis() % 1000;
-  printf("Runtime is %u.%03u s...\n", s, ms);
+  printf("Runtime is %u.%03u s...\n", (unsigned int)s, (unsigned int)ms);
   sleep(1000 - ms);
 }

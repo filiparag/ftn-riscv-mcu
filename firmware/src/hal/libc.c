@@ -1,9 +1,8 @@
 #include <sys/stat.h>
 
+#include <hal/init.h>
 #include <hal/types.h>
 #include <hal/uart.h>
-
-extern void __exit(void) __attribute__((noreturn));
 
 enum UART_PORT __fd_to_uart(const int file) {
   switch (file) {
@@ -19,11 +18,16 @@ enum UART_PORT __fd_to_uart(const int file) {
   }
 }
 
-void *_sbrk(const int incr) {
+static u8 *brk;
+
+void __libc_init_brk() {
   extern const usize __sdram_start;
-  static u8 *heap = (u8 *)&__sdram_start;
-  const u8 *last = heap;
-  heap += incr;
+  brk = (u8 *)&__sdram_start;
+}
+
+void *_sbrk(const int incr) {
+  const u8 *last = brk;
+  brk += incr;
   return (void *)last;
 }
 
