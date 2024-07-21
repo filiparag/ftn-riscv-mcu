@@ -21,7 +21,6 @@ char get_ch(const enum UART_PORT port) {
     while (!__uart0_rx_ready)
       ;
     return __uart0_rx;
-
   case UART1:
     while (!__uart1_rx_ready)
       ;

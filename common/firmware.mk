@@ -11,7 +11,7 @@ clean:
 
 build/%.c.o: ./src/%.c
 	${TOOLCHAIN}gcc \
-		-std=c17 -Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
+		-std=c2x -Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
 
 build/%.cpp.o: ./src/%.cpp
