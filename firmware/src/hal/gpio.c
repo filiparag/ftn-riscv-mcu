@@ -1,4 +1,4 @@
-#include <gpio.h>
+#include <hal/gpio.h>
 
 void set_led(const usize index, const enum DIGITAL_STATE state) {
   if (index < 8) {

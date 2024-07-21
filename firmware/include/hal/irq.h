@@ -1,6 +1,6 @@
 #pragma once
 
-#include <types.h>
+#include <hal/types.h>
 
 #define IRQ_COUNT 32
 #define IRQ_UNSET (irq_fn)0xFFFFFFFF

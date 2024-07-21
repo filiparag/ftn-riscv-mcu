@@ -1,9 +1,6 @@
 #include <stdio.h>
 
-#include <gpio.h>
-#include <init.h>
-#include <irq.h>
-#include <time.h>
+#include <hal.h>
 
 void redraw_led_matrix(const usize irq, union StackFrame *const stack_frame) {
   const usize t = millis();
@@ -86,12 +83,4 @@ void loop(void) {
   const usize ms = millis() % 1000;
   printf("Runtime is %u.%03u s...\n", s, ms);
   sleep(1000 - ms);
-}
-
-int main(void) {
-  setup();
-  for (;;) {
-    loop();
-  }
-  return 0;
 }

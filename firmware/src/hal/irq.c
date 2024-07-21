@@ -1,6 +1,6 @@
-#include <gpio.h>
-#include <irq.h>
-#include <types.h>
+#include <hal/gpio.h>
+#include <hal/irq.h>
+#include <hal/types.h>
 
 static irq_fn irq_vector[IRQ_COUNT];
 

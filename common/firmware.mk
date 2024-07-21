@@ -7,19 +7,22 @@ MAKEFLAGS 	+= --silent
 TOOLCHAIN	:= ${RV32_TOOLCHAIN}/bin/${RV32_TARGET}-
 
 clean:
-	find ${CURDIR}/build -type f -not -name '.gitignore' -exec rm {} \;
+	find ${CURDIR}/build -mindepth 1 -maxdepth 1 -not -name '.gitignore' -exec rm -rf {} \;
 
 build/%.c.o: ./src/%.c
+	mkdir -p "$$(dirname $@)"
 	${TOOLCHAIN}gcc \
 		-std=c2x -Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
 
 build/%.cpp.o: ./src/%.cpp
+	mkdir -p "$$(dirname $@)"
 	${TOOLCHAIN}gcc \
 		-std=c++2b -Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
 
 build/%.S.o: ./src/%.S
+	mkdir -p "$$(dirname $@)"
 	${TOOLCHAIN}gcc \
 		-Wall -ffreestanding -g -Os -I include -march=${RV32_ARCH} \
 		$^ -c -o $@
@@ -33,13 +36,13 @@ ifdef INCLUDE_LIBS
 	${TOOLCHAIN}gcc \
 		-Os -Wall -nostdlib -march=${RV32_ARCH} \
 		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,${CURDIR}/build/fw_playground.map \
-		-Wl,-Bdynamic ${CURDIR}/build/**.o ${CURDIR}/build/**.a -lm -lc -lgcc \
+		-Wl,-Bdynamic $(shell echo $^ | cut -d ' ' -f 2-) ${CURDIR}/build/**.a -lm -lc -lgcc \
 		-o $@
 else
 	${TOOLCHAIN}gcc \
 		-Os -Wall -nostdlib -march=${RV32_ARCH} \
 		-Wl,-Bstatic,-T,${LINKER_SCRIPT},-Map,${CURDIR}/build/fw_playground.map \
-		-Wl,-Bdynamic ${CURDIR}/build/**.o \
+		-Wl,-Bdynamic $(shell echo $^ | cut -d ' ' -f 2-) \
 		-o $@
 endif
 

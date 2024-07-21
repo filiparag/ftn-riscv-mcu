@@ -1,4 +1,4 @@
-#include <uart.h>
+#include <hal/uart.h>
 
 void put_ch(const enum UART_PORT port, const char character) {
   switch (port) {
