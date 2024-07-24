@@ -4,9 +4,20 @@
 
 static irq_fn irq_vector[IRQ_COUNT];
 
-usize irq_enable(const enum IRQ mask) { return ~__irq_mask(~mask); }
+usize irq_set_enabled(const enum IRQ mask) { return ~__irq_set_mask(~mask); }
+
+usize irq_get_enabled(void) { return ~__irq_get_mask(); }
 
 void irq_wait(const enum IRQ mask) { __irq_wait(mask); }
+
+bool irq_ecall(void) {
+  if (__irq_get_mask() & IRQ_ECALL) {
+    return false;
+  } else {
+    __ecall();
+    return true;
+  }
+}
 
 void irq_set_handler(const enum IRQ irq, const irq_fn handler) {
   usize bitmap = irq;

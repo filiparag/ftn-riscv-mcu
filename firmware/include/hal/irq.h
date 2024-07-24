@@ -5,10 +5,10 @@
 #define IRQ_COUNT 32
 #define IRQ_UNSET (irq_fn)0xFFFFFFFF
 
-extern usize __irq_mask(const usize mask);
+extern usize __irq_set_mask(const usize mask);
+extern usize __irq_get_mask(void);
 extern void __irq_wait(const usize mask);
-
-extern void __ecall();
+extern void __ecall(void);
 
 struct StackFrameRegs {
   usize pc, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15,
@@ -44,6 +44,8 @@ enum IRQ {
   IRQ_ALL = 0xFFFFFFFF,
 };
 
-usize irq_enable(const enum IRQ mask);
+usize irq_set_enabled(const enum IRQ mask);
+usize irq_get_enabled(void);
 void irq_wait(const enum IRQ mask);
 void irq_set_handler(const enum IRQ irq, const irq_fn handler);
+bool irq_ecall(void);

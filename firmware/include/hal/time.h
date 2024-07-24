@@ -21,8 +21,8 @@ u64 millis(void);
 u64 micros(void);
 u64 nanos(void);
 
-void timer_enable(const enum TIMER timer);
-void timer_disable(const enum TIMER timer);
+void timer_set_enabled(const enum TIMER timer, const bool enabled);
+bool timer_get_enabled(const enum TIMER timer);
 void timer_set_interval(const enum TIMER timer, const u64 interval_us);
 
 void sleep(const u64 interval_ms);

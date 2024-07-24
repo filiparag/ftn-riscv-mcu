@@ -3,14 +3,16 @@
 .section .init
 .global __reset
 .global __irq_handler
-.global __irq_mask
+.global __irq_set_mask
+.global __irq_get_mask
 .global __irq_wait
 .global __ecall
 .global __init
 .global __exit
 .type __reset @function
 .type __irq_handler @function
-.type __irq_mask @function
+.type __irq_set_mask @function
+.type __irq_get_mask @function
 .type __irq_wait @function
 .type __ecall @function
 .type __init @function
@@ -158,9 +160,24 @@ __irq_handler:
 irq_regs:
     .fill   32, 4
 
-__irq_mask:
+irq_mask:
+    .fill   1, 4
+
+__irq_set_mask:
+
+    lui     t0, %hi(irq_mask)
+    addi    t0, t0, %lo(irq_mask)
+    sw      a0, 0(t0)
 
     picorv32_maskirq_insn(a0, a0)
+    ret
+
+__irq_get_mask:
+
+    lui     t0, %hi(irq_mask)
+    addi    t0, t0, %lo(irq_mask)
+    lw      a0, 0(t0)
+
     ret
 
 __irq_wait:
