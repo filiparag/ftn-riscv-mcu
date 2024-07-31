@@ -42,7 +42,7 @@ module top (
 
 	wire 			s_nrst;
 	wire			s_clk_sys;
-	wire			s_clk_sdram;
+	wire			s_clk_c1;
 	reg			s_rst_proc;
 	reg			s_rst_rom;
 	reg			s_rst_ram;
@@ -56,8 +56,6 @@ module top (
 	wire [31:0]	s_wbm_adr_o;
 	wire [31:0] s_wbm_dat_o;
 	wire [31:0] s_wbm_dat_i;
-	wire [31:0] s_wbm_bram_dat_i;
-	wire [31:0] s_wbm_sdram_dat_i;
 	wire 			s_wbm_we_o;
 	wire  [3:0] s_wbm_sel_o;
 	wire 			s_wbm_stb_o;
@@ -105,7 +103,7 @@ module top (
 	wire			s_wb_sdram_cyc;
 	wire			s_wb_sdram_stb;
 	wire			s_wb_sdram_we;
-	wire [20:0] s_wb_sdram_addr;
+	wire [21:0] s_wb_sdram_addr;
 	wire [31:0] s_wb_sdram_data_i;
 	wire	[3:0] s_wb_sdram_sel;
 	wire			s_wb_sdram_stall;
@@ -140,7 +138,7 @@ module top (
 	assign io_ram_data 	= !s_o_ram_we_n ? s_o_ram_data : 16'bZ;
 	assign s_i_ram_data 	= io_ram_data;
 	assign o_ram_we_n		= s_o_ram_we_n;
-	assign o_ram_clk		= s_clk_sdram;
+	assign o_ram_clk		= s_clk_sys;
 
 	assign o_ram_cs_n		= s_ram_cs_n;
 	assign o_ram_cke 		= s_ram_cke;
@@ -353,7 +351,7 @@ module top (
 		.areset				(i_rst),
 		.inclk0				(i_clk),
 		.c0					(s_clk_sys),
-		.c1					(s_clk_sdram),
+		.c1					(s_clk_c1),
 		.locked				(s_nrst)
 	);
 

@@ -4,6 +4,8 @@
 #include <hal/types.h>
 #include <hal/uart.h>
 
+extern const usize __stack_end;
+
 enum UART_PORT __fd_to_uart(const int file) {
   switch (file) {
   case 0:
@@ -20,10 +22,7 @@ enum UART_PORT __fd_to_uart(const int file) {
 
 static u8 *brk;
 
-void __libc_init_brk() {
-  extern const usize __sdram_start;
-  brk = (u8 *)&__sdram_start;
-}
+void __libc_init_brk() { brk = (u8 *)&__stack_end; }
 
 void *_sbrk(const int incr) {
   const u8 *last = brk;

@@ -28,7 +28,7 @@ entity wb_slave_arbiter is
 	 o_wb_sdram_cyc		: out std_logic;
 	 o_wb_sdram_stb		: out std_logic;
 	 o_wb_sdram_we		: out std_logic;
-	 o_wb_sdram_addr	: out std_logic_vector(20 downto 0);
+	 o_wb_sdram_addr	: out std_logic_vector(21 downto 0);
 	 o_wb_sdram_data	: out std_logic_vector(31 downto 0);
 	 o_wb_sdram_sel		: out std_logic_vector( 3 downto 0);
 	 i_wb_sdram_stall	: in  std_logic;
@@ -71,10 +71,10 @@ architecture rtl of wb_slave_arbiter is
 	constant ADDR_BROM_START	:	integer := 16#10000#;
 	constant ADDR_SDRAM_START	:	integer := 16#11000#;
 	constant ADDR_SDRAM_END		:	integer := 16#FFFFF#;
-	
+
 	type t_slave is (BROM, BRAM, SDRAM, MMAP, SEGFAULT);
 	signal s_slave : t_slave;
-	
+
 begin
 
 	-- Slave --
@@ -97,7 +97,7 @@ begin
 					 i_wb_bram_data when s_slave = BRAM else
 					 i_wb_mmap_data when s_slave = MMAP else
 					 i_wb_sdram_data when s_slave = SDRAM else (others => '0');
-	
+
 	-- BROM --
 	o_wb_brom_cyc <= i_wb_cyc when s_slave = BROM else '0';
 	o_wb_brom_stb <= i_wb_stb when s_slave = BROM else '0';
@@ -105,7 +105,7 @@ begin
 	o_wb_brom_addr <= i_wb_addr - ADDR_BROM_START when s_slave = BROM else (others => '0');
 	o_wb_brom_data <= i_wb_data when s_slave = BROM else (others => '0');
 	o_wb_brom_sel <= i_wb_sel when s_slave = BROM else (others => '0');
-    
+
 	-- BRAM --
 	o_wb_bram_cyc <= i_wb_cyc when s_slave = BRAM else '0';
 	o_wb_bram_stb <= i_wb_stb when s_slave = BRAM else '0';
@@ -126,7 +126,7 @@ begin
 	o_wb_sdram_cyc <= i_wb_cyc when s_slave = SDRAM else '0';
 	o_wb_sdram_stb <= i_wb_stb when s_slave = SDRAM else '0';
 	o_wb_sdram_we <= i_wb_we when s_slave = SDRAM else '0';
-	o_wb_sdram_addr <= i_wb_addr(20 downto 0) - ADDR_SDRAM_START when s_slave = SDRAM else (others => '0');
+	o_wb_sdram_addr <= i_wb_addr(21 downto 0) - ADDR_SDRAM_START when s_slave = SDRAM else (others => '0');
 	o_wb_sdram_data <= i_wb_data when s_slave = SDRAM else (others => '0');
 	o_wb_sdram_sel <= i_wb_sel when s_slave = SDRAM else (others => '0');
 
