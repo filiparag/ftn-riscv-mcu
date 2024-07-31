@@ -45,6 +45,7 @@ else
 		-Wl,-Bdynamic $(shell echo $^ | cut -d ' ' -f 2-) \
 		-o $@
 endif
+	${TOOLCHAIN}strip $@
 
 build/%.bin: build/%.elf
 	${TOOLCHAIN}objcopy -O binary $^ $@
