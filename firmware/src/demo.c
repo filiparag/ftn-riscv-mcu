@@ -3,6 +3,7 @@
 #include <hal.h>
 
 void redraw_led_matrix(const usize irq, union StackFrame *const stack_frame) {
+  extern volatile struct PIXEL __gpio_disp[DISP_ROWS][DISP_COLS];
   const usize t = millis();
   for (usize c = 0; c < 8; ++c) {
     for (usize r = 0; r < 8; ++r) {
@@ -72,10 +73,10 @@ void setup(void) {
   timer_set_interval(TIMER0, 20000);
   timer_set_interval(TIMER1, 100000);
   timer_set_interval(TIMER2, 1000000);
-  timer_enable(TIMER0);
-  timer_enable(TIMER1);
-  timer_enable(TIMER2);
-  irq_enable(IRQ_TIMER0 | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_BUTTON_EVENT);
+  timer_set_enabled(TIMER0, true);
+  timer_set_enabled(TIMER1, true);
+  timer_set_enabled(TIMER2, true);
+  irq_set_enabled(IRQ_TIMER0 | IRQ_TIMER1 | IRQ_TIMER2 | IRQ_BUTTON_EVENT);
 }
 
 void loop(void) {

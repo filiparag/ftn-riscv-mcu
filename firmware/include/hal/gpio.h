@@ -12,15 +12,6 @@ struct PIXEL {
   usize blue : 1;
 };
 
-extern const volatile u16 __gpio_btn_sw;
-
-extern volatile u16 __gpio_led_sem;
-
-extern volatile u16 __gpio_7segm_hex;
-extern volatile u32 __gpio_7segm;
-
-extern volatile struct PIXEL __gpio_disp[DISP_ROWS][DISP_COLS];
-
 enum DIGITAL_STATE {
   LOW = 0,
   HIGH = 1,

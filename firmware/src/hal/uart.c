@@ -1,5 +1,15 @@
 #include <hal/uart.h>
 
+extern const volatile bool __uart0_rx_ready;
+extern const volatile bool __uart0_tx_ready;
+extern const volatile u8 __uart0_rx;
+extern volatile u8 __uart0_tx;
+
+extern const volatile bool __uart1_rx_ready;
+extern const volatile bool __uart1_tx_ready;
+extern const volatile u8 __uart1_rx;
+extern volatile u8 __uart1_tx;
+
 void put_ch(const enum UART_PORT port, const char character) {
   switch (port) {
   case UART0:

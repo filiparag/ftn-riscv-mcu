@@ -1,5 +1,14 @@
 #include <hal/gpio.h>
 
+extern const volatile u16 __gpio_btn_sw;
+
+extern volatile u16 __gpio_led_sem;
+
+extern volatile u16 __gpio_7segm_hex;
+extern volatile u32 __gpio_7segm;
+
+extern volatile struct PIXEL __gpio_disp[DISP_ROWS][DISP_COLS];
+
 void set_led(const usize index, const enum DIGITAL_STATE state) {
   if (index < 8) {
     const u16 mask = 1 << index;

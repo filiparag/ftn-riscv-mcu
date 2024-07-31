@@ -42,7 +42,7 @@ int _isatty(const int file) { return 1; }
 
 int _lseek(const int file, const int ptr, const int dir) { return 0; }
 
-void _exit(const int status) { __exit(); }
+void _exit(const int status) { exit(status); }
 
 void _kill(const int pid, const int sig) { return; }
 

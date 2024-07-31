@@ -2,6 +2,11 @@
 #include <hal/irq.h>
 #include <hal/types.h>
 
+extern usize __irq_set_mask(const usize mask);
+extern usize __irq_get_mask(void);
+extern void __irq_wait(const usize mask);
+extern void __ecall(void);
+
 static irq_fn irq_vector[IRQ_COUNT];
 
 usize irq_set_enabled(const enum IRQ mask) { return ~__irq_set_mask(~mask); }
