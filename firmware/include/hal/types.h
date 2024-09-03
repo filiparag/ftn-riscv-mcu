@@ -17,6 +17,9 @@
 #define isize int32_t
 #define usize uint32_t
 
+#define ptr uintptr_t
+#define NULLPTR (void *)0
+
 #define bool usize
 #define true 1
 #define false 0
