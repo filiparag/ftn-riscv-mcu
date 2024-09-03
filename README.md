@@ -98,7 +98,7 @@ Code examples for the most common use cases are available in [examples](./firmwa
 
 ### Development environment
 
-To set up development environment on Linux, download [Quartus Prime](https://www.intel.com/content/www/us/en/products/details/fpga/development-tools/quartus-prime.html) 23.1 (or newer), a native C compiler, [GNU Coreutils](https://www.gnu.org/s/coreutils/) and [cURL](https://curl.se/). After that, run the following commands in the repository directory:
+To set up development environment on Linux, download [Quartus Prime](https://www.intel.com/content/www/us/en/products/details/fpga/development-tools/quartus-prime.html) 23.1 (or newer), a native C compiler, [GNU Coreutils](https://www.gnu.org/s/coreutils/), [Python](https://www.python.org/), and [cURL](https://curl.se/). After that, run the following commands in the repository directory:
 
 ```shell
 cd ./common/tools/

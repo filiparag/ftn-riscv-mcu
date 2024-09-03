@@ -4,7 +4,7 @@ JedecChain;
 	DefaultMfr(6E);
 
 	P ActionCode(Cfg)
-		Device PartName(10M16SAU169) Path("/home/filiparag/Projects/faculty/riscv-cpu/FPGA/output_files/") File("lprs_cpu.sof") MfrSpec(OpMask(1));
+		Device PartName(10M16SAU169) Path("/projects/riscv-mcu/FPGA/output_files/") File("lprs_cpu.sof") MfrSpec(OpMask(1));
 
 ChainEnd;
 

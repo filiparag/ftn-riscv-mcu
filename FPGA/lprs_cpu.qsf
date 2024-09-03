@@ -56,8 +56,6 @@ set_global_assignment -name VCCA_USER_VOLTAGE 3.3V
 set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
 set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
-set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
-set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH system_tb -section_id eda_simulation
 set_location_assignment PIN_A8 -to o_led[0] -comment LED1
 set_location_assignment PIN_A9 -to o_led[1] -comment LED2
 set_location_assignment PIN_A11 -to o_led[2] -comment LED3
@@ -85,18 +83,9 @@ set_location_assignment PIN_B4 -to o_serial_tx
 set_location_assignment PIN_A6 -to o_serial_ncts
 set_location_assignment PIN_A7 -to o_serial_ndsr
 set_location_assignment PIN_F1 -to i_rst -comment i_pb_rst
-set_global_assignment -name EDA_TEST_BENCH_NAME DMA_FSM_tb -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id DMA_FSM_tb
-set_global_assignment -name EDA_TEST_BENCH_RUN_SIM_FOR "1 ms" -section_id DMA_FSM_tb
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME DMA_FSM_tb -section_id DMA_FSM_tb
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS_WEAK_PULLUP "AS INPUT TRI-STATED"
 set_global_assignment -name EDA_NATIVELINK_SIMULATION_SETUP_SCRIPT system_tb_run.do -section_id eda_simulation
-set_global_assignment -name EDA_TEST_BENCH_FILE DMA_FSM_tb.vhd -section_id DMA_FSM_tb
-set_global_assignment -name EDA_TEST_BENCH_NAME system_tb -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id system_tb
-set_global_assignment -name EDA_TEST_BENCH_RUN_SIM_FOR "1 ms" -section_id system_tb
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME system_tb -section_id system_tb
-set_global_assignment -name EDA_TEST_BENCH_FILE system_tb.vhd -section_id system_tb
 set_location_assignment PIN_D13 -to io_ram_data[15]
 set_location_assignment PIN_B13 -to io_ram_data[14]
 set_location_assignment PIN_B12 -to io_ram_data[13]
@@ -251,5 +240,6 @@ set_global_assignment -name QIP_FILE ip/sdram_pll.qip
 set_global_assignment -name VERILOG_FILE ip/picorv32.v
 set_global_assignment -name VHDL_FILE ip/uart_rx.vhd
 set_global_assignment -name VHDL_FILE ip/uart_tx.vhd
+
 
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
